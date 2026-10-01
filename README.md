@@ -6,8 +6,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Supported-green.svg)](https://www.tampermonkey.net/)
-[![Version](https://img.shields.io/badge/Version-4.1.0-blue.svg)](https://github.com/songjiawei/115-av-dedup-helper)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/songjiawei/115-av-dedup-helper/pulls)
+[![Version](https://img.shields.io/badge/Version-4.1.0-blue.svg)](https://github.com/thevipsong/115-av-dedup-helper)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/thevipsong/115-av-dedup-helper/pulls)
 
 [功能特性](#-功能特性) • [安装方式](#-安装指南) • [使用说明](#-使用教程) • [版本记录](#-版本演进记录) • [免责声明](#-免责声明)
 
@@ -66,7 +66,7 @@
 
 #### 方式一：直接安装（推荐）
 点击下方链接，Tampermonkey 将自动弹出安装界面，点击 **“安装”** 即可：
-👉 **[安装最新版用户脚本 (115-av-dedup-helper.user.js)](https://raw.githubusercontent.com/songjiawei/115-av-dedup-helper/main/115-av-dedup-helper.user.js)**
+👉 **[安装最新版用户脚本 (115-av-dedup-helper.user.js)](https://raw.githubusercontent.com/thevipsong/115-av-dedup-helper/main/115-av-dedup-helper.user.js)**
 
 #### 方式二：手动复制安装
 1. 打开浏览器 Tampermonkey 控制面板；
