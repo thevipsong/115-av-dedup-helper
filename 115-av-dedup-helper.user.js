@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         115网盘番号查重与非番号清理助手
 // @namespace    https://github.com/thevipsong/115-av-dedup-helper
-// @version      4.1.0
-// @description  专为115网盘设计的番号查重与清理神器：支持分集独立保护（杜绝上下集被误删）、万级文件极速扫描、防限流节流、广告杂质文件一键批量删除、特征标签提取与目录定位直达。
+// @version      4.2.0
+// @description  专为115网盘设计的番号查重与清理神器：支持分集独立保护（杜绝上下集被误删）、空文件夹批量检测与清理、万级文件极速扫描、防限流节流、广告杂质文件一键批量删除、特征标签提取与目录定位直达。
 // @author       songjiawei
 // @license      MIT
 // @match        https://115.com/*
@@ -167,22 +167,44 @@
         return '0';
     }
 
-    async function fetchFileList(startCid, isRecursive, onProgress) {
+    async function fetchFilesAndFolders(startCid, isRecursive, onProgress) {
         let allFiles = [];
+        let emptyFolders = [];
         let folderQueue = [startCid];
         let visitedCids = new Set([startCid]);
         let processedFolders = 0;
+
+        // 存储目录结构信息: cid -> { cid, pid, n, t, path, fileCount, subfolders: [] }
+        const folderMap = new Map();
+        folderMap.set(startCid, {
+            cid: startCid,
+            pid: '0',
+            n: '当前目录',
+            t: '',
+            path: '',
+            fileCount: 0,
+            subfolders: []
+        });
+
+        const directSubfolders = [];
 
         while (folderQueue.length > 0) {
             const currentCid = folderQueue.shift();
             processedFolders++;
             let offset = 0;
             const limit = 1150;
+            let currentFolderFiles = 0;
+            let currentFolderSubfolders = [];
+            let totalCountInFolder = 0;
 
             if (isRecursive && processedFolders > 1) await sleep(150);
 
+            const currentFolderObj = folderMap.get(currentCid);
+            const currentPath = currentFolderObj ? currentFolderObj.path : '';
+
             while (true) {
-                const url = `https://webapi.115.com/files?aid=1&cid=${currentCid}&o=user_ptime&asc=0&offset=${offset}&show_dir=${isRecursive ? 1 : 0}&limit=${limit}&natsort=1&format=json`;
+                // show_dir 始终为 1，确保能完整发现子文件夹
+                const url = `https://webapi.115.com/files?aid=1&cid=${currentCid}&o=user_ptime&asc=0&offset=${offset}&show_dir=1&limit=${limit}&natsort=1&format=json`;
                 let data;
                 try {
                     data = await safeFetchJson(url);
@@ -193,12 +215,36 @@
 
                 if (!data || !data.state || !data.data) break;
 
+                totalCountInFolder = data.count || 0;
+
                 for (let item of data.data) {
                     if (item.fid) {
                         allFiles.push(item);
-                    } else if (isRecursive && item.cid && !visitedCids.has(item.cid)) {
-                        visitedCids.add(item.cid);
-                        folderQueue.push(item.cid);
+                        currentFolderFiles++;
+                    } else if (item.cid) {
+                        const itemCid = String(item.cid);
+                        const itemFolderObj = {
+                            cid: itemCid,
+                            pid: String(item.pid || currentCid),
+                            n: item.n || '未命名文件夹',
+                            t: item.t || '',
+                            path: currentPath ? `${currentPath}/${item.n}` : `/${item.n}`,
+                            fileCount: 0,
+                            subfolders: []
+                        };
+                        folderMap.set(itemCid, itemFolderObj);
+                        currentFolderSubfolders.push(itemFolderObj);
+
+                        if (isRecursive) {
+                            if (!visitedCids.has(itemCid)) {
+                                visitedCids.add(itemCid);
+                                folderQueue.push(itemCid);
+                            }
+                        } else {
+                            if (currentCid === startCid) {
+                                directSubfolders.push(itemFolderObj);
+                            }
+                        }
                     }
                 }
 
@@ -207,8 +253,77 @@
                 offset += limit;
                 await sleep(100);
             }
+
+            if (currentFolderObj) {
+                currentFolderObj.fileCount = currentFolderFiles;
+                currentFolderObj.subfolders = currentFolderSubfolders;
+            }
+
+            // 递归模式下：如果当前扫描目录不是起始根目录，且总项数（包含文件与子目录）为0，则判定为直接空目录
+            if (isRecursive && currentCid !== startCid && totalCountInFolder === 0) {
+                if (currentFolderObj && !emptyFolders.some(f => f.cid === currentCid)) {
+                    emptyFolders.push({
+                        ...currentFolderObj,
+                        type: 'direct',
+                        reason: '直接空目录 (0项)'
+                    });
+                }
+            }
         }
-        return allFiles;
+
+        // 非递归模式下：逐个检查直接子目录是否为空
+        if (!isRecursive && directSubfolders.length > 0) {
+            for (let i = 0; i < directSubfolders.length; i++) {
+                const sub = directSubfolders[i];
+                if (onProgress) {
+                    onProgress(allFiles.length, 1, `正在检测空文件夹 (${i + 1}/${directSubfolders.length}): ${sub.n}...`);
+                }
+                const checkUrl = `https://webapi.115.com/files?aid=1&cid=${sub.cid}&show_dir=1&limit=1&format=json`;
+                try {
+                    const checkData = await safeFetchJson(checkUrl);
+                    if (checkData && checkData.state && checkData.count === 0) {
+                        emptyFolders.push({
+                            ...sub,
+                            type: 'direct',
+                            reason: '直接空目录 (0项)'
+                        });
+                    }
+                } catch (e) {
+                    console.warn(`检查目录是否为空失败: ${sub.n}`, e);
+                }
+                await sleep(80);
+            }
+        }
+
+        // 递归模式下：深度检测“层叠空目录”（即目录下 0 个文件，且其所有子目录也都为空目录）
+        if (isRecursive && folderMap.size > 1) {
+            const emptyCidSet = new Set(emptyFolders.map(f => f.cid));
+
+            function isSubtreeEmpty(folderCid) {
+                const f = folderMap.get(folderCid);
+                if (!f) return false;
+                if (f.fileCount > 0) return false;
+                for (const sub of f.subfolders) {
+                    if (!isSubtreeEmpty(sub.cid)) return false;
+                }
+                return true;
+            }
+
+            for (const [cid, f] of folderMap.entries()) {
+                if (cid === startCid) continue;
+                if (emptyCidSet.has(cid)) continue;
+                if (isSubtreeEmpty(cid)) {
+                    emptyFolders.push({
+                        ...f,
+                        type: 'cascade',
+                        reason: `层叠空目录 (含 ${f.subfolders.length} 个空子目录，0 个文件)`
+                    });
+                    emptyCidSet.add(cid);
+                }
+            }
+        }
+
+        return { files: allFiles, emptyFolders };
     }
 
     async function deleteFiles(fileIds, onProgress) {
@@ -234,6 +349,7 @@
     let duplicateGroups = {};
     let allGroups = {};
     let unparsedFiles = [];
+    let emptyFoldersList = [];
     let currentTab = 'dups';
     let searchQuery = '';
     let currentPage = 1;
@@ -303,29 +419,33 @@
                 <div style="padding:16px 24px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; background:#ffffff;">
                     <div style="display:flex; align-items:center; gap:12px;">
                         <span style="font-size:18px;">🎯</span>
-                        <h2 style="margin:0; font-size:16px; font-weight:700; color:#0f172a;">115 番号智能整理助手 <span style="font-size:11px; color:#0284c7; background:#e0f2fe; padding:2px 8px; border-radius:12px; font-weight:600;">v4.1</span></h2>
+                        <h2 style="margin:0; font-size:16px; font-weight:700; color:#0f172a;">115 番号智能整理助手 <span style="font-size:11px; color:#0284c7; background:#e0f2fe; padding:2px 8px; border-radius:12px; font-weight:600;">v4.2</span></h2>
                         <span id="dedup-folder-info" style="font-size:12px; color:#64748b; background:#f8fafc; padding:3px 10px; border-radius:6px; border:1px solid #e2e8f0;"></span>
                     </div>
                     <button id="dedup-close-btn" style="border:none; background:#f1f5f9; width:30px; height:30px; border-radius:50%; font-size:18px; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">&times;</button>
                 </div>
 
-                <!-- 仪表盘统计卡片 -->
-                <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; padding:14px 24px; background:#f8fafc; border-bottom:1px solid #e2e8f0;">
+                <!-- 仪表盘统计卡片 (5列卡片) -->
+                <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:10px; padding:14px 24px; background:#f8fafc; border-bottom:1px solid #e2e8f0;">
                     <div style="background:#fff; padding:10px 14px; border-radius:10px; border:1px solid #e2e8f0;">
                         <div style="font-size:11px; color:#64748b; font-weight:600; text-transform:uppercase;">扫描文件总量</div>
-                        <div id="card-total-files" style="font-size:20px; font-weight:700; color:#0f172a; margin-top:2px;">-</div>
+                        <div id="card-total-files" style="font-size:18px; font-weight:700; color:#0f172a; margin-top:2px;">-</div>
                     </div>
                     <div style="background:#fff; padding:10px 14px; border-radius:10px; border:1px solid #e2e8f0;">
                         <div style="font-size:11px; color:#64748b; font-weight:600; text-transform:uppercase;">番号识别率</div>
-                        <div id="card-recognize-rate" style="font-size:20px; font-weight:700; color:#0284c7; margin-top:2px;">-</div>
+                        <div id="card-recognize-rate" style="font-size:18px; font-weight:700; color:#0284c7; margin-top:2px;">-</div>
                     </div>
                     <div style="background:#fff; padding:10px 14px; border-radius:10px; border:1px solid #e2e8f0;">
                         <div style="font-size:11px; color:#64748b; font-weight:600; text-transform:uppercase;">发现真实重复</div>
-                        <div id="card-dup-groups" style="font-size:20px; font-weight:700; color:#e11d48; margin-top:2px;">-</div>
+                        <div id="card-dup-groups" style="font-size:18px; font-weight:700; color:#e11d48; margin-top:2px;">-</div>
                     </div>
                     <div style="background:#fff; padding:10px 14px; border-radius:10px; border:1px solid #e2e8f0;">
                         <div style="font-size:11px; color:#64748b; font-weight:600; text-transform:uppercase;">可释放冗余空间</div>
-                        <div id="card-redundant-size" style="font-size:20px; font-weight:700; color:#10b981; margin-top:2px;">-</div>
+                        <div id="card-redundant-size" style="font-size:18px; font-weight:700; color:#10b981; margin-top:2px;">-</div>
+                    </div>
+                    <div style="background:#fff; padding:10px 14px; border-radius:10px; border:1px solid #e2e8f0;">
+                        <div style="font-size:11px; color:#64748b; font-weight:600; text-transform:uppercase;">发现空文件夹</div>
+                        <div id="card-empty-folders" style="font-size:18px; font-weight:700; color:#d97706; margin-top:2px;">-</div>
                     </div>
                 </div>
 
@@ -345,7 +465,7 @@
                     </div>
 
                     <div style="position:relative; width:220px;">
-                        <input id="input-search" type="text" placeholder="实时过滤番号/文件名..." style="width:100%; box-sizing:border-box; padding:6px 10px 6px 28px; border:1px solid #cbd5e1; border-radius:20px; font-size:12px; outline:none; transition:border 0.2s;">
+                        <input id="input-search" type="text" placeholder="实时过滤番号/文件名/目录..." style="width:100%; box-sizing:border-box; padding:6px 10px 6px 28px; border:1px solid #cbd5e1; border-radius:20px; font-size:12px; outline:none; transition:border 0.2s;">
                         <span style="position:absolute; left:9px; top:6px; font-size:12px; color:#94a3b8;">🔎</span>
                     </div>
                 </div>
@@ -355,6 +475,7 @@
                     <div id="tab-btn-dups" class="nav-tab" style="padding:10px 18px; cursor:pointer; font-size:13px; font-weight:700; color:#0d6efd; border-bottom:2px solid #0d6efd;">⚠️ 重复番号 (<span id="count-dups">0</span>)</div>
                     <div id="tab-btn-all" class="nav-tab" style="padding:10px 18px; cursor:pointer; font-size:13px; color:#64748b;">📋 所有已识别 (<span id="count-all">0</span>)</div>
                     <div id="tab-btn-unparsed" class="nav-tab" style="padding:10px 18px; cursor:pointer; font-size:13px; color:#64748b;">🗑️ 非番号/杂质文件 (<span id="count-unparsed">0</span>)</div>
+                    <div id="tab-btn-empty-folders" class="nav-tab" style="padding:10px 18px; cursor:pointer; font-size:13px; color:#64748b;">📁 空文件夹 (<span id="count-empty-folders">0</span>)</div>
                 </div>
 
                 <!-- 列表容器 -->
@@ -394,6 +515,7 @@
         document.getElementById('tab-btn-dups').onclick = () => switchTab('dups');
         document.getElementById('tab-btn-all').onclick = () => switchTab('all');
         document.getElementById('tab-btn-unparsed').onclick = () => switchTab('unparsed');
+        document.getElementById('tab-btn-empty-folders').onclick = () => switchTab('empty-folders');
 
         document.getElementById('input-search').oninput = (e) => {
             searchQuery = e.target.value.trim().toLowerCase();
@@ -414,8 +536,9 @@
     function switchTab(tab) {
         currentTab = tab;
         currentPage = 1;
-        ['dups', 'all', 'unparsed'].forEach(t => {
+        ['dups', 'all', 'unparsed', 'empty-folders'].forEach(t => {
             const btn = document.getElementById(`tab-btn-${t}`);
+            if (!btn) return;
             if (t === tab) {
                 btn.style.color = '#0d6efd';
                 btn.style.fontWeight = '700';
@@ -428,7 +551,7 @@
         });
 
         const footerDups = document.getElementById('footer-dups');
-        if (footerDups) footerDups.style.display = (tab === 'unparsed') ? 'none' : 'flex';
+        if (footerDups) footerDups.style.display = (tab === 'unparsed' || tab === 'empty-folders') ? 'none' : 'flex';
         renderCurrentTab();
     }
 
@@ -441,20 +564,23 @@
         contentBox.innerHTML = `
             <div style="text-align:center; padding:80px 0; color:#0d6efd;">
                 <div style="display:inline-block; width:32px; height:32px; border:3px solid #e0f2fe; border-top-color:#0d6efd; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
-                <div id="scan-loading-text" style="font-size:14px; font-weight:600; color:#334155; margin-top:14px;">正在以安全模式读取文件列表...</div>
+                <div id="scan-loading-text" style="font-size:14px; font-weight:600; color:#334155; margin-top:14px;">正在以安全模式读取文件与目录列表...</div>
             </div>
             <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
         `;
 
         try {
-            const files = await fetchFileList(cid, isRecursive, (loaded, folders) => {
+            const { files, emptyFolders } = await fetchFilesAndFolders(cid, isRecursive, (loaded, folders, statusText) => {
                 const txt = document.getElementById('scan-loading-text');
-                if (txt) txt.innerText = `正在读取: ${loaded} 个文件 (已检索 ${folders} 个目录)...`;
+                if (txt) {
+                    txt.innerText = statusText || `正在读取: ${loaded} 个文件 (已检索 ${folders} 个目录)...`;
+                }
             });
 
             allGroups = {};
             duplicateGroups = {};
             unparsedFiles = [];
+            emptyFoldersList = emptyFolders;
             let validCount = 0;
 
             files.forEach(f => {
@@ -483,10 +609,12 @@
             document.getElementById('card-recognize-rate').innerText = files.length ? `${((validCount / files.length) * 100).toFixed(1)}%` : '0%';
             document.getElementById('card-dup-groups').innerText = dupGroupCount;
             document.getElementById('card-redundant-size').innerText = formatSize(redundantSize);
+            document.getElementById('card-empty-folders').innerText = `${emptyFoldersList.length} 个`;
 
             document.getElementById('count-dups').innerText = dupGroupCount;
             document.getElementById('count-all').innerText = validCount;
             document.getElementById('count-unparsed').innerText = unparsedFiles.length;
+            document.getElementById('count-empty-folders').innerText = emptyFoldersList.length;
 
             const hasDups = dupGroupCount > 0;
             document.getElementById('btn-select-smaller').disabled = !hasDups;
@@ -508,6 +636,8 @@
             renderGroups(allGroups, false);
         } else if (currentTab === 'unparsed') {
             renderUnparsed();
+        } else if (currentTab === 'empty-folders') {
+            renderEmptyFolders();
         }
     }
 
@@ -728,6 +858,136 @@
                 alert(`❌ 删除失败: ${err.message}`);
                 btnJunkDel.disabled = false;
                 updateJunkStats();
+            }
+        };
+    }
+
+    function renderEmptyFolders() {
+        const contentBox = document.getElementById('dedup-content');
+        const paginationBox = document.getElementById('pagination-controls');
+        if (paginationBox) paginationBox.style.display = 'none';
+
+        let list = emptyFoldersList;
+        if (searchQuery) {
+            list = list.filter(f => f.n.toLowerCase().includes(searchQuery) || (f.path && f.path.toLowerCase().includes(searchQuery)));
+        }
+
+        if (list.length === 0) {
+            contentBox.innerHTML = `
+                <div style="text-align:center; color:#10b981; margin-top:90px; font-size:14px; font-weight:600;">
+                    🎉 完美！当前扫描范围内未发现任何空文件夹！
+                </div>`;
+            return;
+        }
+
+        let html = `
+            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+                    <div style="font-size:13px; color:#334155; font-weight:600;">
+                        共筛选出 <b style="color:#e11d48;">${list.length}</b> 个空文件夹 (均无实际视频/文件)：
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <button id="btn-empty-select-all" style="background:#fff; color:#334155; border:1px solid #cbd5e1; padding:5px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500;">⚡ 全选空文件夹</button>
+                        <button id="btn-empty-clear" style="background:#fff; color:#64748b; border:1px solid #cbd5e1; padding:5px 12px; border-radius:6px; cursor:pointer; font-size:12px;">清空</button>
+                        <button id="btn-empty-delete" style="background:#e11d48; color:#fff; border:none; padding:6px 16px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:700;" disabled>🗑️ 批量移至回收站 (0)</button>
+                    </div>
+                </div>
+
+                <div style="border-top:1px solid #f1f5f9; padding-top:8px;">
+        `;
+
+        list.forEach(f => {
+            const isCascade = f.type === 'cascade';
+            const badgeBg = isCascade ? '#e0e7ff' : '#fef3c7';
+            const badgeColor = isCascade ? '#3730a3' : '#92400e';
+            const folderUrl = `https://115.com/?cid=${f.pid}&offset=0&mode=wangpan`;
+
+            html += `
+                <div style="display:flex; align-items:center; padding:10px 0; border-bottom:1px dashed #f1f5f9; font-size:13px;">
+                    <input type="checkbox" class="empty-chk" data-cid="${f.cid}" style="margin-right:12px; width:16px; height:16px; cursor:pointer;">
+                    
+                    <span style="font-size:18px; margin-right:8px;">📁</span>
+
+                    <div style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-right:12px;" title="${f.path || f.n}">
+                        <span style="color:#1e293b; font-weight:600;">${f.n}</span>
+                        <span style="background:${badgeBg}; color:${badgeColor}; font-size:11px; padding:2px 7px; border-radius:4px; margin-left:8px; font-weight:600;">
+                            ${f.reason || '直接空目录'}
+                        </span>
+                        ${f.path && f.path !== '/' ? `<span style="color:#94a3b8; font-size:11px; margin-left:8px;" title="${f.path}">路径: ${f.path}</span>` : ''}
+                    </div>
+
+                    <a href="${folderUrl}" target="_blank" style="color:#0284c7; text-decoration:none; font-size:11px; font-weight:600; background:#f0f9ff; padding:3px 9px; border-radius:6px; margin-right:12px; display:flex; align-items:center; gap:4px; border:1px solid #bae6fd; transition:all 0.2s;" title="在115网页端新标签页打开父级目录">
+                        <span>📂</span> 打开所在目录
+                    </a>
+
+                    <a href="javascript:void(0)" class="quick-delete-empty" data-cid="${f.cid}" data-name="${f.n}" style="color:#e11d48; text-decoration:none; font-size:11px; font-weight:600; background:#fff1f2; padding:3px 9px; border-radius:6px; margin-right:16px; border:1px solid #fecdd3; display:flex; align-items:center; gap:4px; transition:all 0.2s;" title="将此空文件夹移至回收站">
+                        <span>🗑️</span> 删除
+                    </a>
+
+                    <span style="width:125px; text-align:right; color:#94a3b8; font-size:12px;">
+                        ${f.t ? f.t.slice(0, 16) : ''}
+                    </span>
+                </div>
+            `;
+        });
+
+        html += `</div></div>`;
+        contentBox.innerHTML = html;
+
+        const emptyCheckboxes = contentBox.querySelectorAll('.empty-chk');
+        const btnEmptyDel = document.getElementById('btn-empty-delete');
+
+        function updateEmptyStats() {
+            const checked = contentBox.querySelectorAll('.empty-chk:checked');
+            btnEmptyDel.innerText = `🗑️ 批量移至回收站 (${checked.length} 个文件夹)`;
+            btnEmptyDel.disabled = checked.length === 0;
+        }
+
+        emptyCheckboxes.forEach(chk => chk.onchange = updateEmptyStats);
+
+        document.getElementById('btn-empty-select-all').onclick = () => {
+            emptyCheckboxes.forEach(chk => chk.checked = true);
+            updateEmptyStats();
+        };
+        document.getElementById('btn-empty-clear').onclick = () => {
+            emptyCheckboxes.forEach(chk => chk.checked = false);
+            updateEmptyStats();
+        };
+
+        // 单项快捷删除
+        contentBox.querySelectorAll('.quick-delete-empty').forEach(btn => {
+            btn.onclick = async (e) => {
+                e.preventDefault();
+                const cid = btn.dataset.cid;
+                const name = btn.dataset.name;
+                if (!confirm(`⚠️ 确认将空文件夹 "${name}" 移至回收站吗？\n（移至回收站后，可在 115 网页回收站随时还原）`)) return;
+                try {
+                    await deleteFiles([cid]);
+                    alert(`✅ 空文件夹 "${name}" 已移至回收站！`);
+                    runScan();
+                } catch (err) {
+                    alert(`❌ 删除失败: ${err.message}`);
+                }
+            };
+        });
+
+        // 批量删除
+        document.getElementById('btn-empty-delete').onclick = async () => {
+            const checked = Array.from(contentBox.querySelectorAll('.empty-chk:checked'));
+            if (checked.length === 0) return;
+            const cids = checked.map(c => c.dataset.cid);
+            if (!confirm(`⚠️ 确认将选中的 ${cids.length} 个空文件夹移至 115 回收站吗？\n（移至回收站后，可在 115 网页回收站随时还原）`)) return;
+
+            btnEmptyDel.disabled = true;
+            btnEmptyDel.innerText = '正在删除...';
+            try {
+                await deleteFiles(cids, (done, total) => btnEmptyDel.innerText = `正在删除 (${done}/${total})...`);
+                alert(`✅ 成功将 ${cids.length} 个空文件夹移至回收站！`);
+                runScan();
+            } catch (err) {
+                alert(`❌ 删除失败: ${err.message}`);
+                btnEmptyDel.disabled = false;
+                updateEmptyStats();
             }
         };
     }
