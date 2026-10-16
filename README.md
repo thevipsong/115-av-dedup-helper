@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Supported-green.svg)](https://www.tampermonkey.net/)
-[![Version](https://img.shields.io/badge/Version-4.3.0-blue.svg)](https://github.com/thevipsong/115-av-dedup-helper)
+[![Version](https://img.shields.io/badge/Version-4.3.1-blue.svg)](https://github.com/thevipsong/115-av-dedup-helper)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/thevipsong/115-av-dedup-helper/pulls)
 
 [功能特性](#-功能特性) • [安装方式](#-安装指南) • [使用说明](#-使用教程) • [版本记录](#-版本演进记录) • [免责声明](#-免责声明)
@@ -108,7 +108,13 @@
 
 ## 📑 版本演进记录
 
-### v4.3.0 (最新稳定版)
+### v4.3.1 (最新版 - 防折行与微交互极致打磨)
+- **工具栏防折行与精简**：统一给所有按钮及 Label 增加 `white-space: nowrap; flex-shrink: 0;`，杜绝任何意外换行；精简文案为 `包含子目录`、`保留最大`、`保留最新`，搜索框自适应弹性伸缩。
+- **现代化 Tab 胶囊徽章**：去除括号与松散空格，采用现代胶囊 Badge，激活态高亮显示，零值弱化。
+- **列表对齐与微交互升级**：番号徽章增加固定最小宽度（`min-width: 82px`），所有文件名严整竖向对齐；“打开目录”平时完全隐形，鼠标悬停时优雅浮现；支持点击整行快速勾选/取消。
+- **底栏状态统一与垂直对齐**：底栏已勾选为 0 时零值淡灰，与顶部指标卡统一；左侧“全选当前页”向右微调 12px 与列表复选框处于同一垂直对齐线。
+
+### v4.3.0
 - **视觉降噪与图标升级**：全面引入 Lucide 风格的 SVG 线性单色图标，替换原生 Emoji；统一全界面微圆角（6px/8px）。
 - **指标卡零值弱化**：数值为 0 时改用浅灰显示，移除多余“个”字，压缩卡片内边距释放垂直空间。
 - **单文件紧凑行模式**：“所有已识别”列表无重复条目自动合并为极简单行，空间利用率提升 100%+。

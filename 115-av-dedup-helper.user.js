@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         115网盘番号查重与非番号清理助手
 // @namespace    https://github.com/thevipsong/115-av-dedup-helper
-// @version      4.3.0
+// @version      4.3.1
 // @description  专为115网盘设计的番号查重与清理神器：支持分集独立保护（杜绝上下集被误删）、空文件夹批量检测与清理、万级文件极速扫描、防限流节流、广告杂质文件一键批量删除、特征标签提取与目录定位直达。
 // @author       songjiawei
 // @license      MIT
@@ -444,13 +444,45 @@
         modal.innerHTML = `
             <style>
                 @keyframes spin { to { transform: rotate(360deg); } }
-                .file-row { transition: background 0.15s ease; }
+                .file-row { transition: background 0.15s ease; cursor: pointer; }
                 .file-row:hover { background: #f8fafc !important; }
-                .file-row .row-open-dir { opacity: 0.7; transition: all 0.15s ease; }
-                .file-row:hover .row-open-dir { opacity: 1 !important; color: #0284c7 !important; background: #e0f2fe !important; border-color: #7dd3fc !important; }
+                .file-row .row-open-dir {
+                    opacity: 0;
+                    visibility: hidden;
+                    background: transparent;
+                    border-color: transparent;
+                    color: #64748b;
+                    transition: opacity 0.15s ease, background 0.15s ease, border-color 0.15s ease, visibility 0.15s ease;
+                }
+                .file-row:hover .row-open-dir {
+                    opacity: 1 !important;
+                    visibility: visible !important;
+                    color: #0284c7 !important;
+                    background: #e0f2fe !important;
+                    border-color: #7dd3fc !important;
+                }
                 .nav-tab { transition: all 0.15s ease; border-bottom: 2px solid transparent; }
                 .nav-tab:hover { color: #0d6efd !important; }
-                .tool-btn { transition: all 0.15s ease; }
+                .tab-badge {
+                    font-size: 11px;
+                    font-weight: 600;
+                    padding: 1px 7px;
+                    border-radius: 10px;
+                    background: #f1f5f9;
+                    color: #94a3b8;
+                    font-variant-numeric: tabular-nums;
+                    transition: all 0.15s ease;
+                    line-height: 1.4;
+                }
+                .tab-badge.active {
+                    background: #dbeafe !important;
+                    color: #2563eb !important;
+                }
+                .tab-badge.has-num:not(.active) {
+                    background: #e2e8f0;
+                    color: #475569;
+                }
+                .tool-btn { transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0; }
                 .tool-btn:not(:disabled):hover { background: #f1f5f9 !important; border-color: #94a3b8 !important; }
                 #btn-scan:hover { background: #0b5ed7 !important; }
                 #dedup-close-btn:hover { background: #e2e8f0 !important; color: #0f172a !important; }
@@ -462,7 +494,7 @@
                 <div style="padding:14px 24px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; background:#ffffff;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span style="display:flex; align-items:center; color:#0d6efd;">${ICONS.target}</span>
-                        <h2 style="margin:0; font-size:15px; font-weight:700; color:#0f172a;">115 番号智能整理助手 <span style="font-size:11px; color:#0284c7; background:#e0f2fe; padding:2px 7px; border-radius:4px; font-weight:600;">v4.3</span></h2>
+                        <h2 style="margin:0; font-size:15px; font-weight:700; color:#0f172a;">115 番号智能整理助手 <span style="font-size:11px; color:#0284c7; background:#e0f2fe; padding:2px 7px; border-radius:4px; font-weight:600;">v4.3.1</span></h2>
                         <div id="dedup-cid-box" style="display:inline-flex; align-items:center; gap:6px; background:#f8fafc; padding:3px 8px; border-radius:6px; border:1px solid #e2e8f0; font-size:12px; color:#64748b; font-family:ui-monospace, monospace; cursor:pointer; user-select:none; transition:all 0.15s;" title="点击复制当前目录 CID">
                             <span>CID: <span id="dedup-folder-info">-</span></span>
                             <span id="dedup-cid-copy-icon" style="display:inline-flex; align-items:center; color:#94a3b8;">${ICONS.copy}</span>
@@ -495,46 +527,53 @@
                     </div>
                 </div>
 
-                <!-- 控制栏与搜索框 (统一6px微圆角与线性图标) -->
+                <!-- 控制栏与搜索框 (防折行、精简文案、弹性搜索框) -->
                 <div style="padding:10px 24px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; background:#ffffff; gap:12px;">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <button id="btn-scan" style="background:#0d6efd; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; display:flex; align-items:center; gap:6px; transition:all 0.15s;">
+                    <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                        <button id="btn-scan" style="background:#0d6efd; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; display:flex; align-items:center; gap:6px; transition:all 0.15s; white-space:nowrap; flex-shrink:0;">
                             ${ICONS.refresh} 重新扫描
                         </button>
-                        <label style="font-size:12px; color:#475569; display:flex; align-items:center; cursor:pointer; gap:4px; margin-left:4px; user-select:none;">
-                            <input type="checkbox" id="chk-recursive" style="width:14px; height:14px; cursor:pointer;"> 穿透子文件夹(递归)
+                        <label style="font-size:12px; color:#475569; display:flex; align-items:center; cursor:pointer; gap:4px; margin-left:4px; user-select:none; white-space:nowrap; flex-shrink:0;" title="递归遍历所有子文件夹查找重复番号与空目录">
+                            <input type="checkbox" id="chk-recursive" style="width:14px; height:14px; cursor:pointer; flex-shrink:0;"> 包含子目录
                         </label>
-                        <span style="border-left:1px solid #e2e8f0; height:16px; margin:0 4px;"></span>
-                        <span style="font-size:12px; color:#94a3b8; font-weight:500;">快速勾选:</span>
-                        <button id="btn-select-smaller" class="tool-btn" style="background:#fff; color:#334155; border:1px solid #cbd5e1; padding:5px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500; display:flex; align-items:center; gap:5px;" disabled>${ICONS.bolt} 保留最大 (勾选较小者)</button>
-                        <button id="btn-select-older" class="tool-btn" style="background:#fff; color:#334155; border:1px solid #cbd5e1; padding:5px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500; display:flex; align-items:center; gap:5px;" disabled>${ICONS.clock} 保留最新 (勾选较旧者)</button>
-                        <button id="btn-clear-selection" class="tool-btn" style="background:#fff; color:#64748b; border:1px solid #cbd5e1; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:12px;" disabled>取消全选</button>
+                        <span style="border-left:1px solid #e2e8f0; height:16px; margin:0 4px; flex-shrink:0;"></span>
+                        <button id="btn-select-smaller" class="tool-btn" style="background:#fff; color:#334155; border:1px solid #cbd5e1; padding:5px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500; display:flex; align-items:center; gap:5px; white-space:nowrap; flex-shrink:0;" title="在所有重复组中自动勾选较小的文件版本" disabled>${ICONS.bolt} 保留最大</button>
+                        <button id="btn-select-older" class="tool-btn" style="background:#fff; color:#334155; border:1px solid #cbd5e1; padding:5px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500; display:flex; align-items:center; gap:5px; white-space:nowrap; flex-shrink:0;" title="在所有重复组中自动勾选较旧的文件版本" disabled>${ICONS.clock} 保留最新</button>
+                        <button id="btn-clear-selection" class="tool-btn" style="background:#fff; color:#64748b; border:1px solid #cbd5e1; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:12px; white-space:nowrap; flex-shrink:0;" title="清空当前所有勾选" disabled>取消全选</button>
                     </div>
 
-                    <div style="position:relative; width:240px;">
+                    <div style="position:relative; flex:1; min-width:180px; max-width:260px;">
                         <input id="input-search" type="text" placeholder="实时过滤番号 / 文件名 / 路径..." style="width:100%; box-sizing:border-box; padding:6px 10px 6px 28px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; outline:none; transition:border 0.2s;">
-                        <span style="position:absolute; left:9px; top:7px; color:#94a3b8; display:flex; align-items:center;">${ICONS.search}</span>
+                        <span style="position:absolute; left:9px; top:7px; color:#94a3b8; display:flex; align-items:center; pointer-events:none;">${ICONS.search}</span>
                     </div>
                 </div>
 
-                <!-- 导航选项卡 -->
-                <div style="display:flex; border-bottom:1px solid #e2e8f0; background:#fff; padding:0 24px;">
-                    <div id="tab-btn-dups" class="nav-tab" style="padding:9px 16px; cursor:pointer; font-size:13px; font-weight:700; color:#0d6efd; border-bottom:2px solid #0d6efd; display:flex; align-items:center; gap:6px;">${ICONS.alert} 重复番号 (<span id="count-dups">0</span>)</div>
-                    <div id="tab-btn-all" class="nav-tab" style="padding:9px 16px; cursor:pointer; font-size:13px; color:#64748b; display:flex; align-items:center; gap:6px;">${ICONS.list} 所有已识别 (<span id="count-all">0</span>)</div>
-                    <div id="tab-btn-unparsed" class="nav-tab" style="padding:9px 16px; cursor:pointer; font-size:13px; color:#64748b; display:flex; align-items:center; gap:6px;">${ICONS.trash} 非番号/杂质文件 (<span id="count-unparsed">0</span>)</div>
-                    <div id="tab-btn-empty-folders" class="nav-tab" style="padding:9px 16px; cursor:pointer; font-size:13px; color:#64748b; display:flex; align-items:center; gap:6px;">${ICONS.folder} 空文件夹 (<span id="count-empty-folders">0</span>)</div>
+                <!-- 导航选项卡 (现代胶囊徽章 Badge) -->
+                <div style="display:flex; border-bottom:1px solid #e2e8f0; background:#fff; padding:0 24px; gap:4px;">
+                    <div id="tab-btn-dups" class="nav-tab" style="padding:9px 14px; cursor:pointer; font-size:13px; font-weight:700; color:#0d6efd; border-bottom:2px solid #0d6efd; display:flex; align-items:center; gap:6px; white-space:nowrap; user-select:none;">
+                        ${ICONS.alert} 重复番号 <span id="count-dups" class="tab-badge active">0</span>
+                    </div>
+                    <div id="tab-btn-all" class="nav-tab" style="padding:9px 14px; cursor:pointer; font-size:13px; color:#64748b; font-weight:500; border-bottom:2px solid transparent; display:flex; align-items:center; gap:6px; white-space:nowrap; user-select:none;">
+                        ${ICONS.list} 所有已识别 <span id="count-all" class="tab-badge">0</span>
+                    </div>
+                    <div id="tab-btn-unparsed" class="nav-tab" style="padding:9px 14px; cursor:pointer; font-size:13px; color:#64748b; font-weight:500; border-bottom:2px solid transparent; display:flex; align-items:center; gap:6px; white-space:nowrap; user-select:none;">
+                        ${ICONS.trash} 非番号/杂质 <span id="count-unparsed" class="tab-badge">0</span>
+                    </div>
+                    <div id="tab-btn-empty-folders" class="nav-tab" style="padding:9px 14px; cursor:pointer; font-size:13px; color:#64748b; font-weight:500; border-bottom:2px solid transparent; display:flex; align-items:center; gap:6px; white-space:nowrap; user-select:none;">
+                        ${ICONS.folder} 空文件夹 <span id="count-empty-folders" class="tab-badge">0</span>
+                    </div>
                 </div>
 
                 <!-- 列表容器 -->
                 <div id="dedup-content" style="flex:1; overflow-y:auto; padding:14px 24px; background:#f8fafc;"></div>
 
-                <!-- 底栏 -->
+                <!-- 底栏 (左侧复选框对齐与零值色彩统一) -->
                 <div id="footer-dups" style="padding:10px 24px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:#ffffff;">
-                    <div style="display:flex; align-items:center; gap:12px;">
-                        <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:#475569; cursor:pointer; user-select:none;">
+                    <div style="display:flex; align-items:center; gap:12px; padding-left:12px;">
+                        <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:#475569; cursor:pointer; user-select:none; white-space:nowrap;">
                             <input type="checkbox" id="chk-select-page" style="width:14px; height:14px; cursor:pointer;"> 全选当前页
                         </label>
-                        <div id="pagination-controls" style="display:none; align-items:center; gap:8px; font-size:12px; color:#64748b;">
+                        <div id="pagination-controls" style="display:none; align-items:center; gap:8px; font-size:12px; color:#64748b; margin-left:8px;">
                             <button id="btn-prev-page" style="padding:3px 8px; border:1px solid #cbd5e1; background:#fff; border-radius:6px; cursor:pointer;">上一页</button>
                             <span id="page-indicator">第 1 页</span>
                             <button id="btn-next-page" style="padding:3px 8px; border:1px solid #cbd5e1; background:#fff; border-radius:6px; cursor:pointer;">下一页</button>
@@ -542,9 +581,9 @@
                     </div>
                     <div style="display:flex; align-items:center; gap:16px; margin-left:auto;">
                         <div id="selection-stats" style="font-size:13px; color:#475569;">
-                            已勾选 <b id="selected-count" style="color:#e11d48; font-size:15px; font-weight:700; font-variant-numeric:tabular-nums;">0</b> 个重复副本 (预计释放 <span id="selected-size" style="font-weight:700; color:#0f172a; font-variant-numeric:tabular-nums;">0 B</span>)
+                            已勾选 <b id="selected-count" style="color:#94a3b8; font-size:15px; font-weight:700; font-variant-numeric:tabular-nums;">0</b> 个重复副本 (预计释放 <span id="selected-size" style="font-weight:700; color:#94a3b8; font-variant-numeric:tabular-nums;">0 B</span>)
                         </div>
-                        <button id="btn-batch-delete" style="background:#e2e8f0; color:#94a3b8; border:none; padding:7px 20px; border-radius:6px; cursor:not-allowed; font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px; transition:all 0.15s;" disabled>
+                        <button id="btn-batch-delete" style="background:#e2e8f0; color:#94a3b8; border:none; padding:7px 20px; border-radius:6px; cursor:not-allowed; font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px; transition:all 0.15s; white-space:nowrap;" disabled>
                             ${ICONS.trash} 批量移至回收站
                         </button>
                     </div>
@@ -616,15 +655,18 @@
         currentPage = 1;
         ['dups', 'all', 'unparsed', 'empty-folders'].forEach(t => {
             const btn = document.getElementById(`tab-btn-${t}`);
+            const badge = btn ? btn.querySelector('.tab-badge') : null;
             if (!btn) return;
             if (t === tab) {
                 btn.style.color = '#0d6efd';
                 btn.style.fontWeight = '700';
                 btn.style.borderBottom = '2px solid #0d6efd';
+                if (badge) badge.classList.add('active');
             } else {
                 btn.style.color = '#64748b';
                 btn.style.fontWeight = '500';
                 btn.style.borderBottom = '2px solid transparent';
+                if (badge) badge.classList.remove('active');
             }
         });
 
@@ -710,10 +752,20 @@
                 elEmpty.style.color = emptyFoldersList.length > 0 ? '#d97706' : '#94a3b8';
             }
 
-            document.getElementById('count-dups').innerText = dupGroupCount;
-            document.getElementById('count-all').innerText = validCount;
-            document.getElementById('count-unparsed').innerText = unparsedFiles.length;
-            document.getElementById('count-empty-folders').innerText = emptyFoldersList.length;
+            function setTabBadge(id, count) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.innerText = count;
+                if (count > 0) {
+                    el.classList.add('has-num');
+                } else {
+                    el.classList.remove('has-num');
+                }
+            }
+            setTabBadge('count-dups', dupGroupCount);
+            setTabBadge('count-all', validCount);
+            setTabBadge('count-unparsed', unparsedFiles.length);
+            setTabBadge('count-empty-folders', emptyFoldersList.length);
 
             const hasDups = dupGroupCount > 0;
             ['btn-select-smaller', 'btn-select-older', 'btn-clear-selection'].forEach(id => {
@@ -797,10 +849,10 @@
                 const folderUrl = `https://115.com/?cid=${file.cid}&offset=0&mode=wangpan`;
 
                 html += `
-                    <div class="file-row" style="display:flex; align-items:center; padding:7px 12px; background:#fff; border:1px solid #e2e8f0; border-radius:6px; margin-bottom:6px; font-size:13px;">
-                        <input type="checkbox" class="file-chk" data-fid="${file.fid}" data-size="${file.s}" data-key="${escapeHtml(key)}" style="margin-right:10px; width:15px; height:15px; cursor:pointer;">
+                    <div class="file-row clickable-row" style="display:flex; align-items:center; padding:7px 12px; background:#fff; border:1px solid #e2e8f0; border-radius:6px; margin-bottom:6px; font-size:13px; cursor:pointer;">
+                        <input type="checkbox" class="file-chk" data-fid="${file.fid}" data-size="${file.s}" data-key="${escapeHtml(key)}" style="margin-right:10px; width:15px; height:15px; cursor:pointer; flex-shrink:0;">
                         
-                        <span style="background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; font-family:ui-monospace, monospace; font-size:11px; font-weight:600; padding:2px 7px; border-radius:4px; margin-right:10px; white-space:nowrap; letter-spacing:0.3px;">
+                        <span style="min-width:82px; text-align:center; display:inline-block; box-sizing:border-box; background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; font-family:ui-monospace, monospace; font-size:11px; font-weight:600; padding:2px 7px; border-radius:4px; margin-right:12px; white-space:nowrap; letter-spacing:0.3px; flex-shrink:0;">
                             ${escapeHtml(key)}
                         </span>
 
@@ -811,14 +863,14 @@
                             </span>
                         </div>
 
-                        <a href="${folderUrl}" target="_blank" class="row-open-dir" style="color:#64748b; text-decoration:none; font-size:11px; font-weight:500; background:#f8fafc; border:1px solid #e2e8f0; padding:2px 8px; border-radius:4px; margin-right:14px; display:inline-flex; align-items:center; gap:4px; transition:all 0.15s;" title="在115网页端新标签页打开所在目录">
+                        <a href="${folderUrl}" target="_blank" class="row-open-dir" style="color:#64748b; text-decoration:none; font-size:11px; font-weight:500; padding:2px 8px; border-radius:4px; margin-right:14px; display:inline-flex; align-items:center; gap:4px; border:1px solid transparent; flex-shrink:0;" title="在115网页端新标签页打开所在目录">
                             ${ICONS.openDir} 打开目录
                         </a>
 
-                        <span style="width:90px; text-align:right; font-variant-numeric:tabular-nums; color:#64748b; margin-right:16px; font-size:12px;">
+                        <span style="width:90px; text-align:right; font-variant-numeric:tabular-nums; color:#64748b; margin-right:16px; font-size:12px; flex-shrink:0;">
                             ${formatSize(file.s)}
                         </span>
-                        <span style="width:125px; text-align:right; font-variant-numeric:tabular-nums; color:#94a3b8; font-size:12px;">
+                        <span style="width:125px; text-align:right; font-variant-numeric:tabular-nums; color:#94a3b8; font-size:12px; flex-shrink:0;">
                             ${file.t ? file.t.slice(0, 16) : ''}
                         </span>
                     </div>
@@ -829,7 +881,7 @@
                     <div class="dup-group" style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; margin-bottom:10px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
                         <div style="padding:8px 14px; background:#f8fafc; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;">
                             <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; font-family:ui-monospace, monospace; font-size:12px; font-weight:600; padding:3px 8px; border-radius:4px; letter-spacing:0.3px;">${escapeHtml(key)}</span>
+                                <span style="min-width:82px; text-align:center; display:inline-block; box-sizing:border-box; background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; font-family:ui-monospace, monospace; font-size:12px; font-weight:600; padding:3px 8px; border-radius:4px; letter-spacing:0.3px; flex-shrink:0;">${escapeHtml(key)}</span>
                                 <span style="font-size:12px; color:#64748b; font-weight:500;">(共 ${items.length} 个版本)</span>
                             </div>
                             <div style="font-size:12px;">
@@ -846,8 +898,8 @@
                     const folderUrl = `https://115.com/?cid=${file.cid}&offset=0&mode=wangpan`;
 
                     html += `
-                        <div class="file-row" style="display:flex; align-items:center; padding:8px 0; border-bottom:1px dashed #f1f5f9; font-size:13px;">
-                            <input type="checkbox" class="file-chk" data-fid="${file.fid}" data-size="${file.s}" data-key="${escapeHtml(key)}" style="margin-right:10px; width:15px; height:15px; cursor:pointer;">
+                        <div class="file-row clickable-row" style="display:flex; align-items:center; padding:8px 0; border-bottom:1px dashed #f1f5f9; font-size:13px; cursor:pointer;">
+                            <input type="checkbox" class="file-chk" data-fid="${file.fid}" data-size="${file.s}" data-key="${escapeHtml(key)}" style="margin-right:10px; width:15px; height:15px; cursor:pointer; flex-shrink:0;">
                             
                             <div style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-right:12px;" title="${escapeHtml(file.n)}">
                                 ${formatFileNameHtml(file.n)}
@@ -856,14 +908,14 @@
                                 </span>
                             </div>
 
-                            <a href="${folderUrl}" target="_blank" class="row-open-dir" style="color:#64748b; text-decoration:none; font-size:11px; font-weight:500; background:#f8fafc; border:1px solid #e2e8f0; padding:2px 8px; border-radius:4px; margin-right:14px; display:inline-flex; align-items:center; gap:4px; transition:all 0.15s;" title="在115网页端新标签页打开该文件所在文件夹">
+                            <a href="${folderUrl}" target="_blank" class="row-open-dir" style="color:#64748b; text-decoration:none; font-size:11px; font-weight:500; padding:2px 8px; border-radius:4px; margin-right:14px; display:inline-flex; align-items:center; gap:4px; border:1px solid transparent; flex-shrink:0;" title="在115网页端新标签页打开该文件所在文件夹">
                                 ${ICONS.openDir} 打开目录
                             </a>
 
-                            <span style="width:110px; text-align:right; font-variant-numeric:tabular-nums; font-weight:${isMax ? '700' : '500'}; color:${isMax ? '#10b981' : '#64748b'}; margin-right:16px; font-size:12px;">
+                            <span style="width:110px; text-align:right; font-variant-numeric:tabular-nums; font-weight:${isMax ? '700' : '500'}; color:${isMax ? '#10b981' : '#64748b'}; margin-right:16px; font-size:12px; flex-shrink:0;">
                                 ${formatSize(file.s)} ${isMax ? '<span style="font-size:11px; color:#10b981;">(建议保留)</span>' : ''}
                             </span>
-                            <span style="width:125px; text-align:right; font-variant-numeric:tabular-nums; color:#94a3b8; font-size:12px;">
+                            <span style="width:125px; text-align:right; font-variant-numeric:tabular-nums; color:#94a3b8; font-size:12px; flex-shrink:0;">
                                 ${file.t ? file.t.slice(0, 16) : ''}
                             </span>
                         </div>
@@ -877,6 +929,17 @@
         contentBox.innerHTML = html;
 
         contentBox.querySelectorAll('.file-chk').forEach(chk => chk.onchange = updateSelectedStats);
+
+        contentBox.querySelectorAll('.clickable-row').forEach(row => {
+            row.onclick = (e) => {
+                if (e.target.closest('a, button, input, .quick-keep-max, .quick-uncheck')) return;
+                const chk = row.querySelector('.file-chk');
+                if (chk) {
+                    chk.checked = !chk.checked;
+                    updateSelectedStats();
+                }
+            };
+        });
 
         contentBox.querySelectorAll('.quick-keep-max').forEach(btn => {
             btn.onclick = () => {
@@ -1060,10 +1123,10 @@
             const folderUrl = `https://115.com/?cid=${f.pid}&offset=0&mode=wangpan`;
 
             html += `
-                <div class="file-row" style="display:flex; align-items:center; padding:8px 10px; border-radius:6px; border-bottom:1px dashed #f1f5f9; font-size:13px;">
-                    <input type="checkbox" class="empty-chk" data-cid="${f.cid}" style="margin-right:10px; width:15px; height:15px; cursor:pointer;">
+                <div class="file-row clickable-row" style="display:flex; align-items:center; padding:8px 10px; border-radius:6px; border-bottom:1px dashed #f1f5f9; font-size:13px; cursor:pointer;">
+                    <input type="checkbox" class="empty-chk" data-cid="${f.cid}" style="margin-right:10px; width:15px; height:15px; cursor:pointer; flex-shrink:0;">
                     
-                    <span style="display:flex; align-items:center; color:#d97706; margin-right:8px;">${ICONS.folder}</span>
+                    <span style="display:flex; align-items:center; color:#d97706; margin-right:8px; flex-shrink:0;">${ICONS.folder}</span>
 
                     <div style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-right:12px;" title="${escapeHtml(f.path || f.n)}">
                         <span style="color:#1e293b; font-weight:600;">${escapeHtml(f.n)}</span>
@@ -1073,15 +1136,15 @@
                         ${f.path && f.path !== '/' ? `<span style="color:#94a3b8; font-size:11px; margin-left:8px;" title="${escapeHtml(f.path)}">路径: ${escapeHtml(f.path)}</span>` : ''}
                     </div>
 
-                    <a href="${folderUrl}" target="_blank" class="row-open-dir" style="color:#64748b; text-decoration:none; font-size:11px; font-weight:500; background:#f8fafc; border:1px solid #e2e8f0; padding:2px 8px; border-radius:4px; margin-right:10px; display:inline-flex; align-items:center; gap:4px; transition:all 0.15s;" title="在115网页端新标签页打开父级目录">
+                    <a href="${folderUrl}" target="_blank" class="row-open-dir" style="color:#64748b; text-decoration:none; font-size:11px; font-weight:500; padding:2px 8px; border-radius:4px; margin-right:10px; display:inline-flex; align-items:center; gap:4px; border:1px solid transparent; flex-shrink:0;" title="在115网页端新标签页打开父级目录">
                         ${ICONS.openDir} 打开目录
                     </a>
 
-                    <a href="javascript:void(0)" class="quick-delete-empty" data-cid="${f.cid}" data-name="${escapeHtml(f.n)}" style="color:#e11d48; text-decoration:none; font-size:11px; font-weight:600; background:#fff1f2; padding:2px 8px; border-radius:4px; margin-right:14px; border:1px solid #fecdd3; display:inline-flex; align-items:center; gap:4px; transition:all 0.15s;" title="将此空文件夹移至回收站">
+                    <a href="javascript:void(0)" class="quick-delete-empty" data-cid="${f.cid}" data-name="${escapeHtml(f.n)}" style="color:#e11d48; text-decoration:none; font-size:11px; font-weight:600; background:#fff1f2; padding:2px 8px; border-radius:4px; margin-right:14px; border:1px solid #fecdd3; display:inline-flex; align-items:center; gap:4px; transition:all 0.15s; flex-shrink:0;" title="将此空文件夹移至回收站">
                         ${ICONS.trash} 删除
                     </a>
 
-                    <span style="width:125px; text-align:right; font-variant-numeric:tabular-nums; color:#94a3b8; font-size:12px;">
+                    <span style="width:125px; text-align:right; font-variant-numeric:tabular-nums; color:#94a3b8; font-size:12px; flex-shrink:0;">
                         ${f.t ? f.t.slice(0, 16) : ''}
                     </span>
                 </div>
@@ -1113,6 +1176,17 @@
         }
 
         emptyCheckboxes.forEach(chk => chk.onchange = updateEmptyStats);
+
+        contentBox.querySelectorAll('.clickable-row').forEach(row => {
+            row.onclick = (e) => {
+                if (e.target.closest('a, button, input, .quick-delete-empty')) return;
+                const chk = row.querySelector('.empty-chk');
+                if (chk) {
+                    chk.checked = !chk.checked;
+                    updateEmptyStats();
+                }
+            };
+        });
 
         document.getElementById('btn-empty-select-all').onclick = () => {
             emptyCheckboxes.forEach(chk => chk.checked = true);
@@ -1195,17 +1269,27 @@
         const btnDel = document.getElementById('btn-batch-delete');
         const chkPage = document.getElementById('chk-select-page');
 
-        if (countEl) countEl.innerText = checkedList.length;
-        if (sizeEl) sizeEl.innerText = formatSize(totalSize);
+        const hasChecked = checkedList.length > 0;
+
+        if (countEl) {
+            countEl.innerText = checkedList.length;
+            countEl.style.color = hasChecked ? '#e11d48' : '#94a3b8';
+        }
+        if (sizeEl) {
+            sizeEl.innerText = formatSize(totalSize);
+            sizeEl.style.color = hasChecked ? '#0f172a' : '#94a3b8';
+        }
 
         const allVisible = document.querySelectorAll('#dedup-content .file-chk');
         if (chkPage && allVisible.length > 0) {
             chkPage.checked = (checkedList.length === allVisible.length);
             chkPage.indeterminate = (checkedList.length > 0 && checkedList.length < allVisible.length);
+        } else if (chkPage) {
+            chkPage.checked = false;
+            chkPage.indeterminate = false;
         }
 
         if (btnDel) {
-            const hasChecked = checkedList.length > 0;
             btnDel.disabled = !hasChecked;
             if (hasChecked) {
                 btnDel.style.background = '#e11d48';
