@@ -3,7 +3,7 @@
 // @namespace    https://github.com/thevipsong/115-av-dedup-helper
 // @version      4.3.2
 // @description  专为115网盘设计的番号查重与清理神器：支持分集独立保护（杜绝上下集被误删）、空文件夹批量检测与清理、万级文件极速扫描、防限流节流、广告杂质文件一键批量删除、特征标签提取与目录定位直达。
-// @author       songjiawei
+// @author       thevipsong
 // @license      MIT
 // @match        https://115.com/*
 // @grant        GM_xmlhttpRequest
