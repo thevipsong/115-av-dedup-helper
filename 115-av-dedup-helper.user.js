@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         115网盘番号查重与非番号清理助手
 // @namespace    https://github.com/thevipsong/115-av-dedup-helper
-// @version      4.3.1
+// @version      4.3.2
 // @description  专为115网盘设计的番号查重与清理神器：支持分集独立保护（杜绝上下集被误删）、空文件夹批量检测与清理、万级文件极速扫描、防限流节流、广告杂质文件一键批量删除、特征标签提取与目录定位直达。
 // @author       songjiawei
 // @license      MIT
@@ -423,6 +423,7 @@
         let modal = document.getElementById('av-dedup-modal');
         if (modal) {
             modal.style.display = 'flex';
+            runScan();
             return;
         }
 
@@ -494,7 +495,7 @@
                 <div style="padding:14px 24px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; background:#ffffff;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span style="display:flex; align-items:center; color:#0d6efd;">${ICONS.target}</span>
-                        <h2 style="margin:0; font-size:15px; font-weight:700; color:#0f172a;">115 番号智能整理助手 <span style="font-size:11px; color:#0284c7; background:#e0f2fe; padding:2px 7px; border-radius:4px; font-weight:600;">v4.3.1</span></h2>
+                        <h2 style="margin:0; font-size:15px; font-weight:700; color:#0f172a;">115 番号智能整理助手 <span style="font-size:11px; color:#0284c7; background:#e0f2fe; padding:2px 7px; border-radius:4px; font-weight:600;">v4.3.2</span></h2>
                         <div id="dedup-cid-box" style="display:inline-flex; align-items:center; gap:6px; background:#f8fafc; padding:3px 8px; border-radius:6px; border:1px solid #e2e8f0; font-size:12px; color:#64748b; font-family:ui-monospace, monospace; cursor:pointer; user-select:none; transition:all 0.15s;" title="点击复制当前目录 CID">
                             <span>CID: <span id="dedup-folder-info">-</span></span>
                             <span id="dedup-cid-copy-icon" style="display:inline-flex; align-items:center; color:#94a3b8;">${ICONS.copy}</span>
@@ -527,14 +528,14 @@
                     </div>
                 </div>
 
-                <!-- 控制栏与搜索框 (防折行、精简文案、弹性搜索框) -->
+                <!-- 控制栏与搜索框 (默认勾选包含子目录、防折行、精简文案、弹性搜索框) -->
                 <div style="padding:10px 24px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; background:#ffffff; gap:12px;">
                     <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
                         <button id="btn-scan" style="background:#0d6efd; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; display:flex; align-items:center; gap:6px; transition:all 0.15s; white-space:nowrap; flex-shrink:0;">
                             ${ICONS.refresh} 重新扫描
                         </button>
-                        <label style="font-size:12px; color:#475569; display:flex; align-items:center; cursor:pointer; gap:4px; margin-left:4px; user-select:none; white-space:nowrap; flex-shrink:0;" title="递归遍历所有子文件夹查找重复番号与空目录">
-                            <input type="checkbox" id="chk-recursive" style="width:14px; height:14px; cursor:pointer; flex-shrink:0;"> 包含子目录
+                        <label style="font-size:12px; color:#475569; display:flex; align-items:center; cursor:pointer; gap:4px; margin-left:4px; user-select:none; white-space:nowrap; flex-shrink:0;" title="递归遍历所有子文件夹查找重复番号与空目录 (切换后将自动重新扫描)">
+                            <input type="checkbox" id="chk-recursive" checked style="width:14px; height:14px; cursor:pointer; flex-shrink:0;"> 包含子目录
                         </label>
                         <span style="border-left:1px solid #e2e8f0; height:16px; margin:0 4px; flex-shrink:0;"></span>
                         <button id="btn-select-smaller" class="tool-btn" style="background:#fff; color:#334155; border:1px solid #cbd5e1; padding:5px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500; display:flex; align-items:center; gap:5px; white-space:nowrap; flex-shrink:0;" title="在所有重复组中自动勾选较小的文件版本" disabled>${ICONS.bolt} 保留最大</button>
@@ -612,6 +613,20 @@
                 }
             }).catch(e => console.warn('复制 CID 失败:', e));
         };
+
+        const chkRecursive = document.getElementById('chk-recursive');
+        if (chkRecursive) {
+            const savedPref = localStorage.getItem('av_dedup_recursive');
+            if (savedPref !== null) {
+                chkRecursive.checked = (savedPref === 'true');
+            } else {
+                chkRecursive.checked = true; // 默认始终自动开启包含子目录
+            }
+            chkRecursive.onchange = () => {
+                localStorage.setItem('av_dedup_recursive', chkRecursive.checked);
+                runScan(); // 勾选或取消时直接自动重新扫描
+            };
+        }
 
         document.getElementById('btn-scan').onclick = runScan;
         document.getElementById('btn-select-smaller').onclick = () => smartAutoSelect('smaller');

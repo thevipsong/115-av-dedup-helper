@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Supported-green.svg)](https://www.tampermonkey.net/)
-[![Version](https://img.shields.io/badge/Version-4.3.1-blue.svg)](https://github.com/thevipsong/115-av-dedup-helper)
+[![Version](https://img.shields.io/badge/Version-4.3.2-blue.svg)](https://github.com/thevipsong/115-av-dedup-helper)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/thevipsong/115-av-dedup-helper/pulls)
 
 [功能特性](#-功能特性) • [安装方式](#-安装指南) • [使用说明](#-使用教程) • [版本记录](#-版本演进记录) • [免责声明](#-免责声明)
@@ -108,7 +108,12 @@
 
 ## 📑 版本演进记录
 
-### v4.3.1 (最新版 - 防折行与微交互极致打磨)
+### v4.3.2 (最新版 - 默认自动递归扫描与状态记忆)
+- **默认开启包含子目录**：首次打开默认勾选“包含子目录”，自动穿透扫描所有子文件夹，无需用户每次手动勾选。
+- **切换即扫与偏好记忆**：切换“包含子目录”复选框时自动触发重新扫描，无需手动点击“重新扫描”按钮；并通过 `localStorage` 自动持久化记忆用户偏好。
+- **弹窗重开自动刷新**：关闭弹窗切换到其他网盘目录再次打开助手时，自动重新扫描当前目录最新文件。
+
+### v4.3.1 (排版防折行与微交互极致打磨)
 - **工具栏防折行与精简**：统一给所有按钮及 Label 增加 `white-space: nowrap; flex-shrink: 0;`，杜绝任何意外换行；精简文案为 `包含子目录`、`保留最大`、`保留最新`，搜索框自适应弹性伸缩。
 - **现代化 Tab 胶囊徽章**：去除括号与松散空格，采用现代胶囊 Badge，激活态高亮显示，零值弱化。
 - **列表对齐与微交互升级**：番号徽章增加固定最小宽度（`min-width: 82px`），所有文件名严整竖向对齐；“打开目录”平时完全隐形，鼠标悬停时优雅浮现；支持点击整行快速勾选/取消。
