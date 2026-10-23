@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         115网盘番号查重与非番号清理助手
 // @namespace    https://github.com/thevipsong/115-av-dedup-helper
-// @version      4.3.2
-// @description  专为115网盘设计的番号查重与清理神器：支持分集独立保护（杜绝上下集被误删）、空文件夹批量检测与清理、万级文件极速扫描、防限流节流、广告杂质文件一键批量删除、特征标签提取与目录定位直达。
+// @version      4.4.0
+// @description  专为115网盘设计的番号查重与清理神器：防风控熔断装甲、根目录穿透保护、支持分集独立保护（杜绝上下集被误删）、空文件夹批量检测与清理、万级文件极速扫描、广告杂质文件一键批量删除、特征标签提取与目录定位直达。
 // @author       thevipsong
 // @license      MIT
 // @match        https://115.com/*
@@ -26,7 +26,9 @@
         openDir: `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`,
         copy: `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`,
         check: `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>`,
-        search: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`
+        search: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`,
+        shield: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+        stop: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><rect width="8" height="8" x="8" y="8" rx="1"/></svg>`
     };
 
     function escapeHtml(str) {
@@ -53,6 +55,10 @@
     }
 
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const sleepRandom = (minMs, maxMs) => {
+        const ms = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+        return new Promise(r => setTimeout(r, ms));
+    };
 
     // 智能提取视频特征标签 (4K / 60FPS / 中文字幕 / 无码)
     function extractBadges(name) {
@@ -65,32 +71,45 @@
         return badges;
     }
 
-    // 安全网络请求 (防限流重试机制)
-    async function safeFetchJson(url, retries = 2) {
-        for (let attempt = 0; attempt <= retries; attempt++) {
-            try {
-                const resp = await fetch(url, { credentials: 'include' });
-                const text = await resp.text();
-                try {
-                    return JSON.parse(text);
-                } catch (jsonErr) {
-                    if (attempt < retries) {
-                        await sleep(1000 * (attempt + 1));
-                        continue;
-                    }
-                    if (text.includes('频繁') || text.includes('验证')) {
-                        throw new Error('115接口请求过于频繁，请稍候再试');
-                    }
-                    throw new Error('115接口返回异常');
-                }
-            } catch (err) {
-                if (attempt < retries) {
-                    await sleep(1000 * (attempt + 1));
-                    continue;
-                }
+    // 安全网络请求 (防限流重试机制与风控探针)
+    async function safeFetchJson(url) {
+        let resp;
+        try {
+            resp = await fetch(url, { credentials: 'include' });
+        } catch (netErr) {
+            const err = new Error('网络请求异常: ' + (netErr.message || '网络连接中断'));
+            throw err;
+        }
+
+        if (resp.status === 429 || resp.status === 403) {
+            const err = new Error('115服务器限制了请求频率 (HTTP ' + resp.status + ')');
+            err.isRateLimited = true;
+            throw err;
+        }
+
+        const text = await resp.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (parseErr) {
+            const isRateLimitHtml = /频繁|验证|安全验证|滑块|captcha|拒绝访问|waf|forbidden|robot/i.test(text);
+            const err = new Error(isRateLimitHtml ? '115接口触发官方安全验证或访问限制' : '115接口返回非JSON数据');
+            if (isRateLimitHtml) err.isRateLimited = true;
+            throw err;
+        }
+
+        if (data && data.state === false) {
+            const errMsg = data.msg || data.error || '';
+            const errCode = String(data.code || '');
+            const isRateLimitedJson = errCode === '99' || errCode === '990001' || /频繁|请稍候|验证|慢一些|操作过快/i.test(errMsg);
+            if (isRateLimitedJson) {
+                const err = new Error('115频控限制: ' + (errMsg || '访问过于频繁 (Code ' + errCode + ')'));
+                err.isRateLimited = true;
                 throw err;
             }
         }
+
+        return data;
     }
 
     // 番号与分集提取逻辑
@@ -198,12 +217,35 @@
         return '0';
     }
 
-    async function fetchFilesAndFolders(startCid, isRecursive, onProgress) {
+    let scanState = {
+        isRunning: false,
+        isAborted: false,
+        abort: function () { this.isAborted = true; }
+    };
+
+    let lastScanMeta = {
+        isRateLimited: false,
+        rateLimitMsg: '',
+        isAborted: false,
+        isFolderLimitReached: false,
+        processedFolders: 0,
+        filesCount: 0,
+        isRoot: false
+    };
+
+    async function fetchFilesAndFolders(startCid, isRecursive, speedMode, onProgress) {
         let allFiles = [];
         let emptyFolders = [];
         let folderQueue = [startCid];
         let visitedCids = new Set([startCid]);
         let processedFolders = 0;
+        let isRateLimited = false;
+        let rateLimitMsg = '';
+        let isAborted = false;
+        let isFolderLimitReached = false;
+        const MAX_SAFE_FOLDERS = 150; // 安全遍历深度上限，杜绝万级子目录暴击
+
+        const isRoot = (startCid === '0' || !startCid);
 
         // 存储目录结构信息: cid -> { cid, pid, n, t, path, fileCount, subfolders: [] }
         const folderMap = new Map();
@@ -219,32 +261,62 @@
 
         const directSubfolders = [];
 
-        while (folderQueue.length > 0) {
+        outerFolderLoop: while (folderQueue.length > 0) {
+            if (scanState.isAborted) {
+                isAborted = true;
+                break outerFolderLoop;
+            }
+
+            if (isRecursive && processedFolders >= MAX_SAFE_FOLDERS) {
+                isFolderLimitReached = true;
+                break outerFolderLoop;
+            }
+
             const currentCid = folderQueue.shift();
             processedFolders++;
+
+            // 仿生随机延时与动态冷却机制 (安全防封模式 vs 极速模式)
+            if (isRecursive && processedFolders > 1) {
+                if (processedFolders % 15 === 0) {
+                    if (onProgress) onProgress(allFiles.length, processedFolders, `🛡️ 防风控动态冷却中 (已扫 ${processedFolders} 目录)...`);
+                    await sleepRandom(speedMode === 'safe' ? 1600 : 800, speedMode === 'safe' ? 2400 : 1200);
+                } else {
+                    await sleepRandom(speedMode === 'safe' ? 450 : 150, speedMode === 'safe' ? 750 : 250);
+                }
+            }
+
             let offset = 0;
             const limit = 1150;
             let currentFolderFiles = 0;
             let currentFolderSubfolders = [];
             let totalCountInFolder = 0;
 
-            if (isRecursive && processedFolders > 1) await sleep(150);
-
             const currentFolderObj = folderMap.get(currentCid);
             const currentPath = currentFolderObj ? currentFolderObj.path : '';
 
-            while (true) {
+            innerPageLoop: while (true) {
+                if (scanState.isAborted) {
+                    isAborted = true;
+                    break outerFolderLoop;
+                }
+
                 // show_dir 始终为 1，确保能完整发现子文件夹
                 const url = `https://webapi.115.com/files?aid=1&cid=${currentCid}&o=user_ptime&asc=0&offset=${offset}&show_dir=1&limit=${limit}&natsort=1&format=json`;
                 let data;
                 try {
                     data = await safeFetchJson(url);
                 } catch (fetchErr) {
-                    console.warn(`[115查重] 读取目录失败，跳过:`, fetchErr);
-                    break;
+                    if (fetchErr.isRateLimited) {
+                        isRateLimited = true;
+                        rateLimitMsg = fetchErr.message;
+                        console.warn('[115查重] 触发官方频率限制，启动紧急熔断:', fetchErr);
+                        break outerFolderLoop; // 关键：立即中断全部扫描，绝不继续出队访问下一个目录！
+                    }
+                    console.warn(`[115查重] 读取目录失败，跳过该目录:`, fetchErr);
+                    break innerPageLoop;
                 }
 
-                if (!data || !data.state || !data.data) break;
+                if (!data || !data.state || !data.data) break innerPageLoop;
 
                 totalCountInFolder = data.count || 0;
 
@@ -280,9 +352,9 @@
                 }
 
                 if (onProgress) onProgress(allFiles.length, processedFolders);
-                if (offset + limit >= data.count || data.data.length === 0) break;
+                if (offset + limit >= data.count || data.data.length === 0) break innerPageLoop;
                 offset += limit;
-                await sleep(100);
+                await sleepRandom(speedMode === 'safe' ? 200 : 80, speedMode === 'safe' ? 350 : 150);
             }
 
             if (currentFolderObj) {
@@ -302,12 +374,17 @@
             }
         }
 
-        // 非递归模式下：逐个检查直接子目录是否为空
-        if (!isRecursive && directSubfolders.length > 0) {
-            for (let i = 0; i < directSubfolders.length; i++) {
+        // 非递归模式下：逐个检查直接子目录是否为空 (根目录下跳过检测，防风控且上限60)
+        if (!isRecursive && !isRateLimited && !isAborted && !isRoot && directSubfolders.length > 0) {
+            const maxCheck = Math.min(directSubfolders.length, 60);
+            for (let i = 0; i < maxCheck; i++) {
+                if (scanState.isAborted) {
+                    isAborted = true;
+                    break;
+                }
                 const sub = directSubfolders[i];
                 if (onProgress) {
-                    onProgress(allFiles.length, 1, `正在检测空文件夹 (${i + 1}/${directSubfolders.length}): ${sub.n}...`);
+                    onProgress(allFiles.length, 1, `正在检测空文件夹 (${i + 1}/${maxCheck}): ${sub.n}...`);
                 }
                 const checkUrl = `https://webapi.115.com/files?aid=1&cid=${sub.cid}&show_dir=1&limit=1&format=json`;
                 try {
@@ -320,9 +397,14 @@
                         });
                     }
                 } catch (e) {
+                    if (e.isRateLimited) {
+                        isRateLimited = true;
+                        rateLimitMsg = e.message;
+                        break;
+                    }
                     console.warn(`检查目录是否为空失败: ${sub.n}`, e);
                 }
-                await sleep(80);
+                await sleepRandom(speedMode === 'safe' ? 350 : 120, speedMode === 'safe' ? 550 : 200);
             }
         }
 
@@ -354,7 +436,15 @@
             }
         }
 
-        return { files: allFiles, emptyFolders };
+        return {
+            files: allFiles,
+            emptyFolders,
+            isRateLimited,
+            rateLimitMsg,
+            isAborted,
+            isFolderLimitReached,
+            processedFolders
+        };
     }
 
     async function deleteFiles(fileIds, onProgress) {
@@ -373,7 +463,7 @@
             if (!res.state) throw new Error(res.msg || res.error || '删除遇到错误');
             deletedCount += chunk.length;
             if (onProgress) onProgress(deletedCount, fileIds.length);
-            await sleep(150);
+            await sleepRandom(250, 400);
         }
     }
 
@@ -423,6 +513,21 @@
         let modal = document.getElementById('av-dedup-modal');
         if (modal) {
             modal.style.display = 'flex';
+            const cid = getCurrentCid();
+            const isRoot = (cid === '0');
+            const chkRecursive = document.getElementById('chk-recursive');
+            if (chkRecursive) {
+                if (isRoot) {
+                    chkRecursive.checked = false;
+                    chkRecursive.disabled = true;
+                    chkRecursive.parentElement.title = '处于网盘根目录时，为防封禁已禁用全盘穿透；请进入具体子文件夹开启';
+                } else {
+                    chkRecursive.disabled = false;
+                    chkRecursive.parentElement.title = '递归遍历所有子文件夹查找重复番号与空目录 (切换后将自动重新扫描)';
+                    const savedPref = localStorage.getItem('av_dedup_recursive');
+                    chkRecursive.checked = (savedPref !== null ? savedPref === 'true' : true);
+                }
+            }
             runScan();
             return;
         }
@@ -495,7 +600,7 @@
                 <div style="padding:14px 24px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; background:#ffffff;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span style="display:flex; align-items:center; color:#0d6efd;">${ICONS.target}</span>
-                        <h2 style="margin:0; font-size:15px; font-weight:700; color:#0f172a;">115 番号智能整理助手 <span style="font-size:11px; color:#0284c7; background:#e0f2fe; padding:2px 7px; border-radius:4px; font-weight:600;">v4.3.2</span></h2>
+                        <h2 style="margin:0; font-size:15px; font-weight:700; color:#0f172a;">115 番号智能整理助手 <span style="font-size:11px; color:#0284c7; background:#e0f2fe; padding:2px 7px; border-radius:4px; font-weight:600;">v4.4.0</span></h2>
                         <div id="dedup-cid-box" style="display:inline-flex; align-items:center; gap:6px; background:#f8fafc; padding:3px 8px; border-radius:6px; border:1px solid #e2e8f0; font-size:12px; color:#64748b; font-family:ui-monospace, monospace; cursor:pointer; user-select:none; transition:all 0.15s;" title="点击复制当前目录 CID">
                             <span>CID: <span id="dedup-folder-info">-</span></span>
                             <span id="dedup-cid-copy-icon" style="display:inline-flex; align-items:center; color:#94a3b8;">${ICONS.copy}</span>
@@ -528,7 +633,7 @@
                     </div>
                 </div>
 
-                <!-- 控制栏与搜索框 (默认勾选包含子目录、防折行、精简文案、弹性搜索框) -->
+                <!-- 控制栏与搜索框 -->
                 <div style="padding:10px 24px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; background:#ffffff; gap:12px;">
                     <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
                         <button id="btn-scan" style="background:#0d6efd; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; display:flex; align-items:center; gap:6px; transition:all 0.15s; white-space:nowrap; flex-shrink:0;">
@@ -537,13 +642,17 @@
                         <label style="font-size:12px; color:#475569; display:flex; align-items:center; cursor:pointer; gap:4px; margin-left:4px; user-select:none; white-space:nowrap; flex-shrink:0;" title="递归遍历所有子文件夹查找重复番号与空目录 (切换后将自动重新扫描)">
                             <input type="checkbox" id="chk-recursive" checked style="width:14px; height:14px; cursor:pointer; flex-shrink:0;"> 包含子目录
                         </label>
+                        <select id="sel-scan-speed" style="background:#fff; color:#334155; border:1px solid #cbd5e1; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:12px; outline:none; height:28px; white-space:nowrap; flex-shrink:0;" title="扫描速率调节：安全防封模式使用 450~750ms 仿生随机延时与动态冷却；极速模式适合少量文件">
+                            <option value="safe">🛡️ 安全防封模式</option>
+                            <option value="fast">⚡ 极速模式</option>
+                        </select>
                         <span style="border-left:1px solid #e2e8f0; height:16px; margin:0 4px; flex-shrink:0;"></span>
                         <button id="btn-select-smaller" class="tool-btn" style="background:#fff; color:#334155; border:1px solid #cbd5e1; padding:5px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500; display:flex; align-items:center; gap:5px; white-space:nowrap; flex-shrink:0;" title="在所有重复组中自动勾选较小的文件版本" disabled>${ICONS.bolt} 保留最大</button>
                         <button id="btn-select-older" class="tool-btn" style="background:#fff; color:#334155; border:1px solid #cbd5e1; padding:5px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500; display:flex; align-items:center; gap:5px; white-space:nowrap; flex-shrink:0;" title="在所有重复组中自动勾选较旧的文件版本" disabled>${ICONS.clock} 保留最新</button>
                         <button id="btn-clear-selection" class="tool-btn" style="background:#fff; color:#64748b; border:1px solid #cbd5e1; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:12px; white-space:nowrap; flex-shrink:0;" title="清空当前所有勾选" disabled>取消全选</button>
                     </div>
 
-                    <div style="position:relative; flex:1; min-width:180px; max-width:260px;">
+                    <div style="position:relative; flex:1; min-width:180px; max-width:240px;">
                         <input id="input-search" type="text" placeholder="实时过滤番号 / 文件名 / 路径..." style="width:100%; box-sizing:border-box; padding:6px 10px 6px 28px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; outline:none; transition:border 0.2s;">
                         <span style="position:absolute; left:9px; top:7px; color:#94a3b8; display:flex; align-items:center; pointer-events:none;">${ICONS.search}</span>
                     </div>
@@ -564,6 +673,9 @@
                         ${ICONS.folder} 空文件夹 <span id="count-empty-folders" class="tab-badge">0</span>
                     </div>
                 </div>
+
+                <!-- 动态警报与防风控横幅容器 -->
+                <div id="dedup-alert-container" style="display:none; padding:12px 24px 0 24px; background:#f8fafc;"></div>
 
                 <!-- 列表容器 -->
                 <div id="dedup-content" style="flex:1; overflow-y:auto; padding:14px 24px; background:#f8fafc;"></div>
@@ -595,8 +707,14 @@
         document.body.appendChild(modal);
         setTimeout(() => modal.style.opacity = '1', 10);
 
-        document.getElementById('dedup-close-btn').onclick = () => modal.style.display = 'none';
-        modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+        const closeModal = () => {
+            modal.style.display = 'none';
+            if (scanState.isRunning) {
+                scanState.abort();
+            }
+        };
+        document.getElementById('dedup-close-btn').onclick = closeModal;
+        modal.onclick = (e) => { if (e.target === modal) closeModal(); };
 
         // 点击复制当前 CID 交互
         document.getElementById('dedup-cid-box').onclick = () => {
@@ -614,17 +732,34 @@
             }).catch(e => console.warn('复制 CID 失败:', e));
         };
 
+        const currentCid = getCurrentCid();
+        const isCurrentRoot = (currentCid === '0');
         const chkRecursive = document.getElementById('chk-recursive');
         if (chkRecursive) {
-            const savedPref = localStorage.getItem('av_dedup_recursive');
-            if (savedPref !== null) {
-                chkRecursive.checked = (savedPref === 'true');
+            if (isCurrentRoot) {
+                chkRecursive.checked = false;
+                chkRecursive.disabled = true;
+                chkRecursive.parentElement.title = '处于网盘根目录时，为防封禁已禁用全盘穿透；请进入具体子文件夹开启';
             } else {
-                chkRecursive.checked = true; // 默认始终自动开启包含子目录
+                chkRecursive.disabled = false;
+                chkRecursive.parentElement.title = '递归遍历所有子文件夹查找重复番号与空目录 (切换后将自动重新扫描)';
+                const savedPref = localStorage.getItem('av_dedup_recursive');
+                chkRecursive.checked = (savedPref !== null ? savedPref === 'true' : true);
             }
             chkRecursive.onchange = () => {
-                localStorage.setItem('av_dedup_recursive', chkRecursive.checked);
+                if (!isCurrentRoot) {
+                    localStorage.setItem('av_dedup_recursive', chkRecursive.checked);
+                }
                 runScan(); // 勾选或取消时直接自动重新扫描
+            };
+        }
+
+        const selSpeed = document.getElementById('sel-scan-speed');
+        if (selSpeed) {
+            const savedSpeed = localStorage.getItem('av_dedup_speed') || 'safe';
+            selSpeed.value = savedSpeed;
+            selSpeed.onchange = () => {
+                localStorage.setItem('av_dedup_speed', selSpeed.value);
             };
         }
 
@@ -690,26 +825,130 @@
         renderCurrentTab();
     }
 
+    function updateAlertBanner() {
+        const bannerBox = document.getElementById('dedup-alert-container');
+        if (!bannerBox) return;
+
+        const banners = [];
+
+        if (lastScanMeta.isRoot) {
+            banners.push(`
+                <div style="background:#fffbeb; border:1px solid #fef3c7; color:#92400e; padding:8px 14px; border-radius:6px; font-size:12px; display:flex; align-items:center; gap:8px;">
+                    ${ICONS.shield}
+                    <span><b>防风控根目录保护生效：</b>检测到当前处于网盘根目录 (全部文件，总容量 85TB+)。全盘穿透将检索数万个子目录，极易触发 115 官方风控封禁！已锁定为「仅扫描当前一级目录」。建议先进入具体的影片子文件夹，再开启穿透查重。</span>
+                </div>
+            `);
+        }
+
+        if (lastScanMeta.isRateLimited) {
+            banners.push(`
+                <div style="background:#fff1f2; border:1px solid #fecdd3; color:#be123c; padding:8px 14px; border-radius:6px; font-size:12px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        ${ICONS.alert}
+                        <span><b>115 官方频控熔断生效：</b>${escapeHtml(lastScanMeta.rateLimitMsg || '触发接口访问频率限制')}。为保护账号安全，助手已立即终止后续请求！已为您保留当前已搜集的 <b>${lastScanMeta.filesCount || 0}</b> 个文件。<b>建议静置 3~5 分钟</b>让 115 服务端冷却后再试。</span>
+                    </div>
+                </div>
+            `);
+        } else if (lastScanMeta.isAborted) {
+            banners.push(`
+                <div style="background:#fffbeb; border:1px solid #fef3c7; color:#92400e; padding:8px 14px; border-radius:6px; font-size:12px; display:flex; align-items:center; gap:8px;">
+                    ${ICONS.alert}
+                    <span><b>扫描已主动停止：</b>已为您保留停止前检索到的 <b>${lastScanMeta.filesCount || 0}</b> 个文件与已发现的空文件夹。</span>
+                </div>
+            `);
+        } else if (lastScanMeta.isFolderLimitReached) {
+            banners.push(`
+                <div style="background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; padding:8px 14px; border-radius:6px; font-size:12px; display:flex; align-items:center; gap:8px;">
+                    ${ICONS.alert}
+                    <span><b>已达到单次安全扫描上限 (150 个子目录)：</b>为防止过多请求触发官方风控，已自动收敛并展示当前结果。建议进入具体子文件夹进行更精细的穿透整理。</span>
+                </div>
+            `);
+        }
+
+        if (banners.length > 0) {
+            bannerBox.style.display = 'block';
+            bannerBox.innerHTML = banners.join('<div style="height:6px;"></div>');
+        } else {
+            bannerBox.style.display = 'none';
+            bannerBox.innerHTML = '';
+        }
+    }
+
     async function runScan() {
+        if (scanState.isRunning) {
+            scanState.abort();
+            await sleep(250);
+        }
+
+        scanState.isRunning = true;
+        scanState.isAborted = false;
+
         const cid = getCurrentCid();
-        const isRecursive = document.getElementById('chk-recursive').checked;
+        const isRoot = (cid === '0');
+        const chkRecursive = document.getElementById('chk-recursive');
+        if (chkRecursive) {
+            if (isRoot) {
+                chkRecursive.checked = false;
+                chkRecursive.disabled = true;
+            } else {
+                chkRecursive.disabled = false;
+            }
+        }
+        const isRecursive = isRoot ? false : (chkRecursive ? chkRecursive.checked : false);
+
+        const selSpeed = document.getElementById('sel-scan-speed');
+        const speedMode = selSpeed ? selSpeed.value : 'safe';
+
         const contentBox = document.getElementById('dedup-content');
+        const alertBox = document.getElementById('dedup-alert-container');
+        if (alertBox) { alertBox.style.display = 'none'; alertBox.innerHTML = ''; }
         document.getElementById('dedup-folder-info').innerText = cid;
 
         contentBox.innerHTML = `
             <div style="text-align:center; padding:80px 0; color:#0d6efd;">
-                <div style="display:inline-block; width:32px; height:32px; border:3px solid #e0f2fe; border-top-color:#0d6efd; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
-                <div id="scan-loading-text" style="font-size:14px; font-weight:600; color:#334155; margin-top:14px;">正在以安全模式读取文件与目录列表...</div>
+                <div style="display:inline-block; width:36px; height:36px; border:3px solid #e0f2fe; border-top-color:#0d6efd; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+                <div id="scan-loading-text" style="font-size:14px; font-weight:600; color:#334155; margin-top:16px;">正在以${speedMode === 'safe' ? '安全防封' : '极速'}模式读取文件与目录列表...</div>
+                <div id="scan-loading-subtext" style="font-size:12px; color:#94a3b8; margin-top:6px;">${speedMode === 'safe' ? '已启用仿生随机延时与动态冷却保护' : '极速模式中，请注意目录规模'}</div>
+                <div style="margin-top:20px;">
+                    <button id="btn-abort-scan" style="background:#fff; color:#e11d48; border:1px solid #fecdd3; padding:6px 16px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:6px; box-shadow:0 1px 2px rgba(0,0,0,0.05); transition:all 0.15s;">
+                        ${ICONS.stop} 停止扫描 (保留已搜结果)
+                    </button>
+                </div>
             </div>
         `;
 
+        const abortBtn = document.getElementById('btn-abort-scan');
+        if (abortBtn) {
+            abortBtn.onclick = () => {
+                scanState.abort();
+                abortBtn.innerText = '正在安全收尾停止...';
+                abortBtn.disabled = true;
+                abortBtn.style.opacity = '0.6';
+            };
+        }
+
         try {
-            const { files, emptyFolders } = await fetchFilesAndFolders(cid, isRecursive, (loaded, folders, statusText) => {
+            const scanResult = await fetchFilesAndFolders(cid, isRecursive, speedMode, (loaded, folders, statusText) => {
                 const txt = document.getElementById('scan-loading-text');
                 if (txt) {
                     txt.innerText = statusText || `正在读取: ${loaded} 个文件 (已检索 ${folders} 个目录)...`;
                 }
             });
+
+            scanState.isRunning = false;
+
+            const files = scanResult.files;
+            const emptyFolders = scanResult.emptyFolders;
+
+            lastScanMeta = {
+                isRateLimited: scanResult.isRateLimited,
+                rateLimitMsg: scanResult.rateLimitMsg,
+                isAborted: scanResult.isAborted,
+                isFolderLimitReached: scanResult.isFolderLimitReached,
+                processedFolders: scanResult.processedFolders,
+                filesCount: files.length,
+                isRoot: isRoot
+            };
 
             allGroups = {};
             duplicateGroups = {};
@@ -792,10 +1031,12 @@
                 }
             });
 
+            updateAlertBanner();
             renderCurrentTab();
 
         } catch (err) {
-            contentBox.innerHTML = `<div style="text-align:center; color:#e11d48; padding:60px; font-weight:600;">❌ 扫描中断: ${escapeHtml(err.message)}</div>`;
+            scanState.isRunning = false;
+            contentBox.innerHTML = `<div style="text-align:center; color:#e11d48; padding:60px; font-weight:600;">❌ 扫描异常中断: ${escapeHtml(err.message)}</div>`;
         }
     }
 
