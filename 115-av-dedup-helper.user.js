@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         115网盘番号查重与非番号清理助手
 // @namespace    https://github.com/thevipsong/115-av-dedup-helper
-// @version      4.4.0
-// @description  专为115网盘设计的番号查重与清理神器：防风控熔断装甲、根目录穿透保护、支持分集独立保护（杜绝上下集被误删）、空文件夹批量检测与清理、万级文件极速扫描、广告杂质文件一键批量删除、特征标签提取与目录定位直达。
+// @version      4.5.0
+// @description  专为115网盘设计的番号查重与清理神器：一键批量规范化重命名为识别番号、防风控熔断装甲、根目录穿透保护、支持分集独立保护（杜绝上下集被误删）、空文件夹批量检测与清理、万级文件极速扫描、广告杂质文件一键批量删除、特征标签提取与目录定位直达。
 // @author       thevipsong
 // @license      MIT
 // @match        https://115.com/*
@@ -28,7 +28,8 @@
         check: `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>`,
         search: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`,
         shield: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
-        stop: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><rect width="8" height="8" x="8" y="8" rx="1"/></svg>`
+        stop: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><rect width="8" height="8" x="8" y="8" rx="1"/></svg>`,
+        edit: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`
     };
 
     function escapeHtml(str) {
@@ -467,6 +468,39 @@
         }
     }
 
+    // 智能计算规范化重命名后的目标文件名（番号 + 分集 + 原扩展名）
+    function getStandardAvName(file) {
+        if (!file || !file.n) return '';
+        const extMatch = file.n.match(/\.([a-zA-Z0-9]{2,5})$/);
+        const ext = extMatch ? `.${extMatch[1]}` : '';
+        const parsedCode = file.parsedCode;
+        if (!parsedCode) return file.n;
+        const part = file.partInfo ? `_${file.partInfo}` : '';
+        return `${parsedCode}${part}${ext}`;
+    }
+
+    // 批量重命名文件
+    async function renameFiles(renameList, onProgress) {
+        // renameList: Array<{ fid: string, oldName: string, newName: string }>
+        const batchSize = 20; // 较小的批次，更加安全防限流
+        let renamedCount = 0;
+        for (let i = 0; i < renameList.length; i += batchSize) {
+            const chunk = renameList.slice(i, i + batchSize);
+            const body = chunk.map(item => `files_new_name[${encodeURIComponent(item.fid)}]=${encodeURIComponent(item.newName)}`).join('&');
+            const resp = await fetch('https://webapi.115.com/files/batch_rename', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                body: body,
+                credentials: 'include'
+            });
+            const res = await resp.json();
+            if (!res.state) throw new Error(res.msg || res.error || '批量重命名遇到错误');
+            renamedCount += chunk.length;
+            if (onProgress) onProgress(renamedCount, renameList.length);
+            await sleepRandom(300, 500);
+        }
+    }
+
     let duplicateGroups = {};
     let allGroups = {};
     let unparsedFiles = [];
@@ -650,6 +684,7 @@
                         <button id="btn-select-smaller" class="tool-btn" style="background:#fff; color:#334155; border:1px solid #cbd5e1; padding:5px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500; display:flex; align-items:center; gap:5px; white-space:nowrap; flex-shrink:0;" title="在所有重复组中自动勾选较小的文件版本" disabled>${ICONS.bolt} 保留最大</button>
                         <button id="btn-select-older" class="tool-btn" style="background:#fff; color:#334155; border:1px solid #cbd5e1; padding:5px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500; display:flex; align-items:center; gap:5px; white-space:nowrap; flex-shrink:0;" title="在所有重复组中自动勾选较旧的文件版本" disabled>${ICONS.clock} 保留最新</button>
                         <button id="btn-clear-selection" class="tool-btn" style="background:#fff; color:#64748b; border:1px solid #cbd5e1; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:12px; white-space:nowrap; flex-shrink:0;" title="清空当前所有勾选" disabled>取消全选</button>
+                        <button id="btn-batch-rename" class="tool-btn" style="background:#fff; color:#4338ca; border:1px solid #c7d2fe; padding:5px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; display:flex; align-items:center; gap:5px; white-space:nowrap; flex-shrink:0;" title="将勾选或当前列表的文件名称批量规范化修改为识别到的标准番号名称" disabled>${ICONS.edit} 番号重命名</button>
                     </div>
 
                     <div style="position:relative; flex:1; min-width:180px; max-width:240px;">
@@ -767,6 +802,7 @@
         document.getElementById('btn-select-smaller').onclick = () => smartAutoSelect('smaller');
         document.getElementById('btn-select-older').onclick = () => smartAutoSelect('older');
         document.getElementById('btn-clear-selection').onclick = clearAllSelection;
+        document.getElementById('btn-batch-rename').onclick = runBatchRename;
         document.getElementById('btn-batch-delete').onclick = runDeleteDups;
 
         // 底栏全选当前页交互
@@ -1031,6 +1067,14 @@
                 }
             });
 
+            const btnBatchRename = document.getElementById('btn-batch-rename');
+            if (btnBatchRename) {
+                const hasValid = validCount > 0;
+                btnBatchRename.disabled = !hasValid;
+                btnBatchRename.style.opacity = hasValid ? '1' : '0.45';
+                btnBatchRename.style.cursor = hasValid ? 'pointer' : 'not-allowed';
+            }
+
             updateAlertBanner();
             renderCurrentTab();
 
@@ -1103,6 +1147,8 @@
                 const file = items[0];
                 const badges = extractBadges(file.n);
                 const folderUrl = `https://115.com/?cid=${file.cid}&offset=0&mode=wangpan`;
+                const stdName = getStandardAvName(file);
+                const isDifferentName = (stdName && stdName.toLowerCase() !== file.n.toLowerCase());
 
                 html += `
                     <div class="file-row clickable-row" style="display:flex; align-items:center; padding:7px 12px; background:#fff; border:1px solid #e2e8f0; border-radius:6px; margin-bottom:6px; font-size:13px; cursor:pointer;">
@@ -1118,6 +1164,11 @@
                                 ${badges.map(b => `<span style="background:${b.bg}; color:${b.color}; font-size:10px; font-weight:700; padding:1px 5px; border-radius:3px; margin-right:4px;">${b.text}</span>`).join('')}
                             </span>
                         </div>
+
+                        ${isDifferentName ? `
+                        <a href="javascript:void(0)" class="quick-rename-file" data-fid="${file.fid}" data-oldname="${escapeHtml(file.n)}" data-newname="${escapeHtml(stdName)}" style="color:#4338ca; background:#eef2ff; border:1px solid #c7d2fe; text-decoration:none; font-size:11px; font-weight:600; padding:2px 8px; border-radius:4px; margin-right:10px; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;" title="单文件重命名为: ${escapeHtml(stdName)}">
+                            ${ICONS.edit} 改为番号名
+                        </a>` : ''}
 
                         <a href="${folderUrl}" target="_blank" class="row-open-dir" style="color:#64748b; text-decoration:none; font-size:11px; font-weight:500; padding:2px 8px; border-radius:4px; margin-right:14px; display:inline-flex; align-items:center; gap:4px; border:1px solid transparent; flex-shrink:0;" title="在115网页端新标签页打开所在目录">
                             ${ICONS.openDir} 打开目录
@@ -1152,6 +1203,8 @@
                     const isMax = file.s === maxSize;
                     const badges = extractBadges(file.n);
                     const folderUrl = `https://115.com/?cid=${file.cid}&offset=0&mode=wangpan`;
+                    const stdName = getStandardAvName(file);
+                    const isDifferentName = (stdName && stdName.toLowerCase() !== file.n.toLowerCase());
 
                     html += `
                         <div class="file-row clickable-row" style="display:flex; align-items:center; padding:8px 0; border-bottom:1px dashed #f1f5f9; font-size:13px; cursor:pointer;">
@@ -1163,6 +1216,11 @@
                                     ${badges.map(b => `<span style="background:${b.bg}; color:${b.color}; font-size:10px; font-weight:700; padding:1px 5px; border-radius:3px; margin-right:4px;">${b.text}</span>`).join('')}
                                 </span>
                             </div>
+
+                            ${isDifferentName ? `
+                            <a href="javascript:void(0)" class="quick-rename-file" data-fid="${file.fid}" data-oldname="${escapeHtml(file.n)}" data-newname="${escapeHtml(stdName)}" style="color:#4338ca; background:#eef2ff; border:1px solid #c7d2fe; text-decoration:none; font-size:11px; font-weight:600; padding:2px 8px; border-radius:4px; margin-right:10px; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;" title="单文件重命名为: ${escapeHtml(stdName)}">
+                                ${ICONS.edit} 改为番号名
+                            </a>` : ''}
 
                             <a href="${folderUrl}" target="_blank" class="row-open-dir" style="color:#64748b; text-decoration:none; font-size:11px; font-weight:500; padding:2px 8px; border-radius:4px; margin-right:14px; display:inline-flex; align-items:center; gap:4px; border:1px solid transparent; flex-shrink:0;" title="在115网页端新标签页打开该文件所在文件夹">
                                 ${ICONS.openDir} 打开目录
@@ -1188,11 +1246,35 @@
 
         contentBox.querySelectorAll('.clickable-row').forEach(row => {
             row.onclick = (e) => {
-                if (e.target.closest('a, button, input, .quick-keep-max, .quick-uncheck')) return;
+                if (e.target.closest('a, button, input, .quick-keep-max, .quick-uncheck, .quick-rename-file')) return;
                 const chk = row.querySelector('.file-chk');
                 if (chk) {
                     chk.checked = !chk.checked;
                     updateSelectedStats();
+                }
+            };
+        });
+
+        // 单文件一键重命名为番号名
+        contentBox.querySelectorAll('.quick-rename-file').forEach(btn => {
+            btn.onclick = async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const fid = btn.dataset.fid;
+                const oldName = btn.dataset.oldname;
+                const newName = btn.dataset.newname;
+                if (!confirm(`⚠️ 确认将文件：\n"${oldName}"\n\n重命名为：\n"${newName}" 吗？`)) return;
+
+                btn.innerText = '正在重命名...';
+                btn.style.pointerEvents = 'none';
+                try {
+                    await renameFiles([{ fid, oldName, newName }]);
+                    alert(`✅ 重命名成功: ${newName}`);
+                    runScan();
+                } catch (err) {
+                    alert(`❌ 重命名失败: ${err.message}`);
+                    btn.innerHTML = `${ICONS.edit} 改为番号名`;
+                    btn.style.pointerEvents = 'auto';
                 }
             };
         });
@@ -1557,6 +1639,93 @@
                 btnDel.style.color = '#94a3b8';
                 btnDel.style.cursor = 'not-allowed';
                 btnDel.style.boxShadow = 'none';
+            }
+        }
+    }
+
+    async function runBatchRename() {
+        // 1. 优先获取当前勾选的文件；若无勾选，则获取当前正在查看列表（'dups' 或 'all'）中所有可重命名识别的文件
+        const checkedBoxes = Array.from(document.querySelectorAll('#dedup-content .file-chk:checked'));
+        let targetFiles = [];
+
+        // 建立当前所有已识别文件的映射 (fid -> fileObject)
+        const recognizedMap = new Map();
+        for (const items of Object.values(allGroups)) {
+            for (const file of items) {
+                recognizedMap.set(String(file.fid), file);
+            }
+        }
+
+        if (checkedBoxes.length > 0) {
+            targetFiles = checkedBoxes.map(chk => recognizedMap.get(String(chk.dataset.fid))).filter(Boolean);
+        } else {
+            // 当前没有任何勾选，询问是否对当前标签页的所有已识别文件执行重命名
+            const currentTabFiles = [];
+            if (currentTab === 'dups') {
+                for (const items of Object.values(duplicateGroups)) {
+                    currentTabFiles.push(...items);
+                }
+            } else {
+                for (const items of Object.values(allGroups)) {
+                    currentTabFiles.push(...items);
+                }
+            }
+            targetFiles = currentTabFiles;
+        }
+
+        if (targetFiles.length === 0) {
+            alert('当前没有可重命名的已识别番号文件！');
+            return;
+        }
+
+        // 过滤出真正需要修改名称的文件 (目标名称与当前名称不同)
+        const renameList = [];
+        for (const file of targetFiles) {
+            const newName = getStandardAvName(file);
+            if (newName && newName.toLowerCase() !== file.n.toLowerCase()) {
+                renameList.push({
+                    fid: file.fid,
+                    oldName: file.n,
+                    newName: newName
+                });
+            }
+        }
+
+        if (renameList.length === 0) {
+            alert('🎉 检查完毕！所选/当前列表中的文件名称均已是标准番号格式，无需重命名。');
+            return;
+        }
+
+        // 显示预览确认框（前 5 个作为示例）
+        const samplePreview = renameList.slice(0, 5).map(item => `• ${item.oldName}\n  ➔ ${item.newName}`).join('\n\n');
+        const moreNotice = renameList.length > 5 ? `\n... 以及另外 ${renameList.length - 5} 个文件` : '';
+
+        const conf = confirm(
+            `⚠️ 准备执行【批量番号重命名】：\n\n` +
+            `共发现 ${renameList.length} 个文件需要规范化为标准番号格式。\n\n` +
+            `【重命名效果预览（前 5 项）】：\n${samplePreview}${moreNotice}\n\n` +
+            `是否确认开始重命名？（重命名时将启用防风控延时）`
+        );
+        if (!conf) return;
+
+        const btnRename = document.getElementById('btn-batch-rename');
+        if (btnRename) {
+            btnRename.disabled = true;
+            btnRename.innerText = '正在重命名...';
+        }
+
+        try {
+            await renameFiles(renameList, (done, total) => {
+                if (btnRename) btnRename.innerText = `重命名进度 (${done}/${total})...`;
+            });
+            alert(`✅ 批量重命名完成！已成功规范化 ${renameList.length} 个文件名称。`);
+            runScan();
+        } catch (err) {
+            alert(`❌ 批量重命名中断或失败: ${err.message}`);
+        } finally {
+            if (btnRename) {
+                btnRename.disabled = false;
+                btnRename.innerHTML = `${ICONS.edit} 番号重命名`;
             }
         }
     }
