@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         115网盘番号查重与非番号清理助手
 // @namespace    https://github.com/thevipsong/115-av-dedup-helper
-// @version      4.5.0
-// @description  专为115网盘设计的番号查重与清理神器：一键批量规范化重命名为识别番号、防风控熔断装甲、根目录穿透保护、支持分集独立保护（杜绝上下集被误删）、空文件夹批量检测与清理、万级文件极速扫描、广告杂质文件一键批量删除、特征标签提取与目录定位直达。
+// @version      4.5.1
+// @description  专为115网盘设计的番号查重与清理神器：一键批量规范化重命名为识别番号、精美拟态预览确认框、防风控熔断装甲、根目录穿透保护、支持分集独立保护（杜绝上下集被误删）、空文件夹批量检测与清理、万级文件极速扫描、广告杂质文件一键批量删除、特征标签提取与目录定位直达。
 // @author       thevipsong
 // @license      MIT
 // @match        https://115.com/*
@@ -29,7 +29,9 @@
         search: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`,
         shield: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
         stop: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><rect width="8" height="8" x="8" y="8" rx="1"/></svg>`,
-        edit: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`
+        edit: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+        info: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`,
+        arrowRight: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`
     };
 
     function escapeHtml(str) {
@@ -60,6 +62,185 @@
         const ms = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
         return new Promise(r => setTimeout(r, ms));
     };
+
+    // 现代化优雅模态弹窗系统 (替换丑陋且容易拦截的系统原生 confirm / alert)
+    function showCustomDialog({
+        type = 'confirm', // 'confirm' | 'alert' | 'preview-rename'
+        title = '操作提示',
+        subtitle = '',
+        items = [], // 针对 preview-rename: Array<{ oldName, newName }>
+        totalCount = 0,
+        confirmText = '确定',
+        cancelText = '取消',
+        isDanger = false,
+        iconType = 'alert' // 'alert' | 'edit' | 'trash' | 'info'
+    }) {
+        return new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.className = 'av-dialog-overlay';
+            Object.assign(overlay.style, {
+                position: 'fixed',
+                inset: '0',
+                backgroundColor: 'rgba(15, 23, 42, 0.72)',
+                backdropFilter: 'blur(8px)',
+                zIndex: '200000',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                opacity: '0',
+                transition: 'opacity 0.2s ease',
+                fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+            });
+
+            let iconSvg = ICONS.alert;
+            let iconColor = '#f59e0b';
+            let iconBg = '#fef3c7';
+
+            if (iconType === 'edit') {
+                iconSvg = ICONS.edit;
+                iconColor = '#4f46e5';
+                iconBg = '#eef2ff';
+            } else if (iconType === 'trash' || isDanger) {
+                iconSvg = ICONS.trash;
+                iconColor = '#e11d48';
+                iconBg = '#ffe4e6';
+            } else if (iconType === 'info') {
+                iconSvg = ICONS.info;
+                iconColor = '#0284c7';
+                iconBg = '#e0f2fe';
+            }
+
+            let bodyHtml = '';
+            if (type === 'preview-rename') {
+                const previewItemsHtml = items.map((item, idx) => `
+                    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; margin-bottom:8px; box-shadow:0 1px 2px rgba(0,0,0,0.02);">
+                        <div style="display:flex; align-items:center; gap:6px; color:#64748b; font-size:12px; margin-bottom:6px;">
+                            <span style="background:#f1f5f9; color:#475569; font-size:10px; font-weight:700; padding:1px 5px; border-radius:3px;">原文件名 #${idx + 1}</span>
+                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;" title="${escapeHtml(item.oldName)}">${escapeHtml(item.oldName)}</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="color:#6366f1; display:flex; align-items:center;">${ICONS.arrowRight}</span>
+                            <span style="background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; font-family:ui-monospace, monospace; font-size:12px; font-weight:600; padding:2px 8px; border-radius:4px; letter-spacing:0.3px;">
+                                ${escapeHtml(item.newName)}
+                            </span>
+                        </div>
+                    </div>
+                `).join('');
+
+                const moreText = totalCount > items.length
+                    ? `<div style="text-align:center; color:#94a3b8; font-size:12px; padding:6px 0;">... 以及另外 <b>${totalCount - items.length}</b> 个文件均将统一按此规则规范化</div>`
+                    : '';
+
+                bodyHtml = `
+                    <div style="margin-bottom:12px; font-size:13px; color:#334155; line-height:1.5;">
+                        共匹配到 <b style="color:#4f46e5; font-size:15px; font-variant-numeric:tabular-nums;">${totalCount}</b> 个文件需要规范化为标准番号格式。
+                        <div style="font-size:12px; color:#64748b; margin-top:2px;">智能保留识别番号、上下集标识（如 _PART1）以及原扩展名（.mp4/.mkv）。</div>
+                    </div>
+                    <div style="max-height:260px; overflow-y:auto; padding-right:4px; border-radius:6px;">
+                        ${previewItemsHtml}
+                        ${moreText}
+                    </div>
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 12px; font-size:11px; color:#64748b; margin-top:12px; display:flex; align-items:center; gap:6px;">
+                        ${ICONS.shield} <span>已自动启用安全防风控仿生间隔（300~500ms），大批量改名稳定安全。</span>
+                    </div>
+                `;
+            } else {
+                bodyHtml = `
+                    <div style="font-size:13px; color:#475569; line-height:1.6; white-space:pre-line; max-height:360px; overflow-y:auto;">
+                        ${escapeHtml(subtitle)}
+                    </div>
+                `;
+            }
+
+            const btnConfirmBg = isDanger
+                ? 'linear-gradient(135deg, #e11d48 0%, #be123c 100%)'
+                : 'linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)';
+            const btnConfirmShadow = isDanger
+                ? '0 4px 12px rgba(225,29,72,0.3)'
+                : '0 4px 12px rgba(79,70,229,0.3)';
+
+            overlay.innerHTML = `
+                <div class="av-dialog-card" style="background:#ffffff; width:520px; max-width:92vw; border-radius:14px; box-shadow:0 20px 48px rgba(0,0,0,0.22); overflow:hidden; transform:scale(0.95); transition:transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);">
+                    <div style="padding:20px 24px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; gap:12px;">
+                        <div style="width:36px; height:36px; border-radius:10px; background:${iconBg}; color:${iconColor}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            ${iconSvg}
+                        </div>
+                        <div style="flex:1;">
+                            <h3 style="margin:0; font-size:16px; font-weight:700; color:#0f172a;">${escapeHtml(title)}</h3>
+                        </div>
+                        <button class="dialog-close-btn" style="border:none; background:transparent; width:28px; height:28px; border-radius:6px; font-size:18px; cursor:pointer; color:#94a3b8; display:flex; align-items:center; justify-content:center; transition:all 0.15s;">&times;</button>
+                    </div>
+
+                    <div style="padding:18px 24px; background:#fafafa;">
+                        ${bodyHtml}
+                    </div>
+
+                    <div style="padding:14px 24px; background:#ffffff; border-top:1px solid #f1f5f9; display:flex; justify-content:flex-end; align-items:center; gap:10px;">
+                        ${type !== 'alert' ? `
+                            <button class="dialog-cancel-btn" style="padding:8px 18px; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; color:#475569; font-size:13px; font-weight:500; cursor:pointer; transition:all 0.15s;">
+                                ${escapeHtml(cancelText)}
+                            </button>
+                        ` : ''}
+                        <button class="dialog-confirm-btn" style="padding:8px 22px; border-radius:8px; border:none; background:${btnConfirmBg}; color:#ffffff; font-size:13px; font-weight:600; cursor:pointer; box-shadow:${btnConfirmShadow}; transition:all 0.15s;">
+                            ${escapeHtml(confirmText)}
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            setTimeout(() => {
+                overlay.style.opacity = '1';
+                const card = overlay.querySelector('.av-dialog-card');
+                if (card) card.style.transform = 'scale(1)';
+            }, 10);
+
+            const closeDialog = (result) => {
+                overlay.style.opacity = '0';
+                const card = overlay.querySelector('.av-dialog-card');
+                if (card) card.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                    resolve(result);
+                }, 200);
+            };
+
+            const closeBtn = overlay.querySelector('.dialog-close-btn');
+            if (closeBtn) closeBtn.onclick = () => closeDialog(false);
+
+            const cancelBtn = overlay.querySelector('.dialog-cancel-btn');
+            if (cancelBtn) cancelBtn.onclick = () => closeDialog(false);
+
+            const confirmBtn = overlay.querySelector('.dialog-confirm-btn');
+            if (confirmBtn) confirmBtn.onclick = () => closeDialog(true);
+
+            overlay.onclick = (e) => {
+                if (e.target === overlay) closeDialog(false);
+            };
+        });
+    }
+
+    // 便捷调用包装
+    function uiAlert(subtitle, title = '提示', iconType = 'info') {
+        return showCustomDialog({
+            type: 'alert',
+            title,
+            subtitle,
+            confirmText: '我知道了',
+            iconType
+        });
+    }
+
+    function uiConfirm(subtitle, title = '操作确认', isDanger = false, iconType = 'alert') {
+        return showCustomDialog({
+            type: 'confirm',
+            title,
+            subtitle,
+            isDanger,
+            iconType
+        });
+    }
 
     // 智能提取视频特征标签 (4K / 60FPS / 中文字幕 / 无码)
     function extractBadges(name) {
@@ -1263,16 +1444,26 @@
                 const fid = btn.dataset.fid;
                 const oldName = btn.dataset.oldname;
                 const newName = btn.dataset.newname;
-                if (!confirm(`⚠️ 确认将文件：\n"${oldName}"\n\n重命名为：\n"${newName}" 吗？`)) return;
+                
+                const confirmed = await showCustomDialog({
+                    type: 'preview-rename',
+                    title: '确认重命名为标准番号',
+                    items: [{ oldName, newName }],
+                    totalCount: 1,
+                    confirmText: '立即改名',
+                    cancelText: '取消',
+                    iconType: 'edit'
+                });
+                if (!confirmed) return;
 
-                btn.innerText = '正在重命名...';
+                btn.innerText = '正在改名...';
                 btn.style.pointerEvents = 'none';
                 try {
                     await renameFiles([{ fid, oldName, newName }]);
-                    alert(`✅ 重命名成功: ${newName}`);
+                    await uiAlert(`文件已成功规范重命名为：\n"${newName}"`, '重命名成功', 'info');
                     runScan();
                 } catch (err) {
-                    alert(`❌ 重命名失败: ${err.message}`);
+                    await uiAlert(`重命名失败: ${err.message}`, '操作失败', 'alert');
                     btn.innerHTML = `${ICONS.edit} 改为番号名`;
                     btn.style.pointerEvents = 'auto';
                 }
@@ -1402,16 +1593,17 @@
             const checked = Array.from(contentBox.querySelectorAll('.junk-chk:checked'));
             if (checked.length === 0) return;
             const fids = checked.map(c => c.dataset.fid);
-            if (!confirm(`⚠️ 确认将选中的 ${fids.length} 个非番号广告/杂质文件移至回收站吗？`)) return;
+            const confirmed = await uiConfirm(`确认将选中的 ${fids.length} 个非番号广告/杂质文件移至 115 回收站吗？\n（移至回收站后，可在 115 网页回收站随时还原）`, '清理杂质确认', true, 'trash');
+            if (!confirmed) return;
 
             btnJunkDel.disabled = true;
             btnJunkDel.innerText = '正在删除...';
             try {
                 await deleteFiles(fids, (done, total) => btnJunkDel.innerText = `正在删除 (${done}/${total})...`);
-                alert(`✅ 成功清理 ${fids.length} 个杂质文件！`);
+                await uiAlert(`已成功将 ${fids.length} 个杂质文件移至回收站！`, '清理完成', 'info');
                 runScan();
             } catch (err) {
-                alert(`❌ 删除失败: ${err.message}`);
+                await uiAlert(`删除失败: ${err.message}`, '删除异常', 'alert');
                 btnJunkDel.disabled = false;
                 updateJunkStats();
             }
@@ -1541,13 +1733,14 @@
                 e.preventDefault();
                 const cid = btn.dataset.cid;
                 const name = btn.dataset.name;
-                if (!confirm(`⚠️ 确认将空文件夹 "${name}" 移至回收站吗？\n（移至回收站后，可在 115 网页回收站随时还原）`)) return;
+                const confirmed = await uiConfirm(`确认将空文件夹 "${name}" 移至回收站吗？\n（移至回收站后，可在 115 网页回收站随时还原）`, '删除空目录确认', true, 'trash');
+                if (!confirmed) return;
                 try {
                     await deleteFiles([cid]);
-                    alert(`✅ 空文件夹 "${name}" 已移至回收站！`);
+                    await uiAlert(`空文件夹 "${name}" 已成功移至回收站！`, '删除成功', 'info');
                     runScan();
                 } catch (err) {
-                    alert(`❌ 删除失败: ${err.message}`);
+                    await uiAlert(`删除失败: ${err.message}`, '删除异常', 'alert');
                 }
             };
         });
@@ -1557,16 +1750,17 @@
             const checked = Array.from(contentBox.querySelectorAll('.empty-chk:checked'));
             if (checked.length === 0) return;
             const cids = checked.map(c => c.dataset.cid);
-            if (!confirm(`⚠️ 确认将选中的 ${cids.length} 个空文件夹移至 115 回收站吗？\n（移至回收站后，可在 115 网页回收站随时还原）`)) return;
+            const confirmed = await uiConfirm(`确认将选中的 ${cids.length} 个空文件夹移至 115 回收站吗？\n（移至回收站后，可在 115 网页回收站随时还原）`, '批量删除空目录', true, 'trash');
+            if (!confirmed) return;
 
             btnEmptyDel.disabled = true;
             btnEmptyDel.innerText = '正在删除...';
             try {
                 await deleteFiles(cids, (done, total) => btnEmptyDel.innerText = `正在删除 (${done}/${total})...`);
-                alert(`✅ 成功将 ${cids.length} 个空文件夹移至回收站！`);
+                await uiAlert(`成功将 ${cids.length} 个空文件夹移至回收站！`, '清理完成', 'info');
                 runScan();
             } catch (err) {
-                alert(`❌ 删除失败: ${err.message}`);
+                await uiAlert(`删除失败: ${err.message}`, '删除异常', 'alert');
                 btnEmptyDel.disabled = false;
                 updateEmptyStats();
             }
@@ -1674,7 +1868,7 @@
         }
 
         if (targetFiles.length === 0) {
-            alert('当前没有可重命名的已识别番号文件！');
+            await uiAlert('当前扫描结果中没有可重命名的已识别番号文件！', '提示', 'info');
             return;
         }
 
@@ -1692,21 +1886,21 @@
         }
 
         if (renameList.length === 0) {
-            alert('🎉 检查完毕！所选/当前列表中的文件名称均已是标准番号格式，无需重命名。');
+            await uiAlert('检查完毕！当前选中的或列表中的文件名称均已是标准番号格式，无需重命名。', '全部已规范', 'info');
             return;
         }
 
-        // 显示预览确认框（前 5 个作为示例）
-        const samplePreview = renameList.slice(0, 5).map(item => `• ${item.oldName}\n  ➔ ${item.newName}`).join('\n\n');
-        const moreNotice = renameList.length > 5 ? `\n... 以及另外 ${renameList.length - 5} 个文件` : '';
-
-        const conf = confirm(
-            `⚠️ 准备执行【批量番号重命名】：\n\n` +
-            `共发现 ${renameList.length} 个文件需要规范化为标准番号格式。\n\n` +
-            `【重命名效果预览（前 5 项）】：\n${samplePreview}${moreNotice}\n\n` +
-            `是否确认开始重命名？（重命名时将启用防风控延时）`
-        );
-        if (!conf) return;
+        // 调用精美拟态预览确认弹窗
+        const confirmed = await showCustomDialog({
+            type: 'preview-rename',
+            title: '批量番号规范化重命名',
+            items: renameList.slice(0, 6), // 预览前 6 个文件改名前后对照
+            totalCount: renameList.length,
+            confirmText: `确认重命名 (${renameList.length}个文件)`,
+            cancelText: '取消',
+            iconType: 'edit'
+        });
+        if (!confirmed) return;
 
         const btnRename = document.getElementById('btn-batch-rename');
         if (btnRename) {
@@ -1716,12 +1910,12 @@
 
         try {
             await renameFiles(renameList, (done, total) => {
-                if (btnRename) btnRename.innerText = `重命名进度 (${done}/${total})...`;
+                if (btnRename) btnRename.innerText = `重命名 (${done}/${total})...`;
             });
-            alert(`✅ 批量重命名完成！已成功规范化 ${renameList.length} 个文件名称。`);
+            await uiAlert(`批量重命名完成！已成功将 ${renameList.length} 个文件规范化为标准番号名称。`, '重命名成功', 'info');
             runScan();
         } catch (err) {
-            alert(`❌ 批量重命名中断或失败: ${err.message}`);
+            await uiAlert(`批量重命名中断或失败: ${err.message}`, '操作异常', 'alert');
         } finally {
             if (btnRename) {
                 btnRename.disabled = false;
@@ -1738,8 +1932,8 @@
         let totalSize = 0;
         checkedList.forEach(c => totalSize += Number(c.dataset.size || 0));
 
-        const conf = confirm(`⚠️ 确认将选中的 ${count} 个重复副本移至 115 回收站？\n（合计 ${formatSize(totalSize)}，可在 115 网页回收站随时还原）`);
-        if (!conf) return;
+        const confirmed = await uiConfirm(`确认将选中的 ${count} 个重复副本移至 115 回收站？\n（合计 ${formatSize(totalSize)}，可在 115 网页回收站随时还原）`, '删除重复文件确认', true, 'trash');
+        if (!confirmed) return;
 
         const btnDel = document.getElementById('btn-batch-delete');
         btnDel.disabled = true;
@@ -1748,10 +1942,10 @@
         const fids = checkedList.map(c => c.dataset.fid);
         try {
             await deleteFiles(fids, (deleted, total) => btnDel.innerText = `正在删除 (${deleted}/${total})...`);
-            alert(`✅ 成功将 ${fids.length} 个重复副本移至回收站！`);
+            await uiAlert(`成功将 ${fids.length} 个重复副本移至回收站！`, '删除成功', 'info');
             runScan();
         } catch (err) {
-            alert(`❌ 删除失败: ${err.message}`);
+            await uiAlert(`删除失败: ${err.message}`, '删除异常', 'alert');
         } finally {
             btnDel.disabled = false;
             btnDel.innerText = '🗑️ 批量移至回收站';

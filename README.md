@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Supported-green.svg)](https://www.tampermonkey.net/)
-[![Version](https://img.shields.io/badge/Version-4.5.0-blue.svg)](https://github.com/thevipsong/115-av-dedup-helper)
+[![Version](https://img.shields.io/badge/Version-4.5.1-blue.svg)](https://github.com/thevipsong/115-av-dedup-helper)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/thevipsong/115-av-dedup-helper/pulls)
 
 [功能特性](#-功能特性) • [界面预览](#-界面预览) • [安装方式](#-安装指南) • [使用说明](#-使用教程) • [版本记录](#-版本演进记录) • [免责声明](#-免责声明)
@@ -147,6 +147,11 @@
 ---
 
 ## 📑 版本演进记录
+
+### v4.5.1 (UI 拟态交互全面升级 & 现代化弹窗系统)
+- **全新现代化模态弹窗系统**：全面剔除浏览器丑陋的原生 `confirm()` 与 `alert()` 弹窗，构建与 SaaS 仪表盘一致的高级拟态对话框（毛玻璃模糊遮罩、卡片微弹动效、矢量图标强调）。
+- **批量重命名可视化对比卡片**：批量重命名确认弹窗支持卡片流展示改名前后直观对比（原文件名 ➔ 独立徽章高亮新番号名），并支持滑动预览多项；大批量操作时附带条数聚合提示与防风控安全说明。
+- **全系统对话框风格归一**：删除重复副本、清理广告杂质文件、清理空目录及各种结果反馈均统一接入优雅的 Dialog 系统，再也不怕浏览器原生弹窗被误拦截或样式失调。
 
 ### v4.5.0 (批量番号规范化重命名与防风控改名引擎)
 - **新增批量番号重命名**：工具栏新增 **【✏️ 番号重命名】** 功能，可将冗长混乱的文件名一键批量规范化修改为识别到的标准番号（例如 `sdnm-015_...4K.mp4` ➔ `SDNM-015.mp4`）。
