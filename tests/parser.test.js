@@ -21,11 +21,25 @@ const {
     isSubtitleFile,
     isDamagedVideoFile,
     isFolderIgnored,
-    sanitizeHttpUrl
+    sanitizeHttpUrl,
+    isForumSiteContext,
+    parseForumUrlParams,
+    extractTidFromHref,
+    isForumAttachmentHref,
+    extractThreadResources,
+    formatThreadLinksText,
+    filterForumPostByTime,
+    resolvePosterUrl,
+    normalizeSearchCodeForSite,
+    isMatchingAvCode,
+    parseJavBusHtml,
+    parseJavDbHtml,
+    parseAvsoxHtml,
+    buildPosterFetchPlan
 } = require('../115-av-dedup-helper.user.js');
 
 test('版本号导出校验', () => {
-    assert.equal(APP_VERSION, '5.1.0');
+    assert.equal(APP_VERSION, '5.2.0');
 });
 
 test('标准有码、特异片商及自定义前缀/屏蔽词识别', () => {
@@ -183,4 +197,161 @@ test('筛选排序键、外链 URL、忽略目录及清单补漏对比', () => {
     assert.equal(sanitizeHttpUrl('javascript:alert(1)'), '');
     assert.equal(sanitizeHttpUrl('https://thumb.115.com/abc.jpg'), 'https://thumb.115.com/abc.jpg');
     assert.equal(getStandardAvName({ n: 'sdnm-015.mp4', parsedCode: 'SDNM-015', partInfo: '' }, 'custom', '{code}-{part}.{ext}'), 'SDNM-015.mp4');
+});
+
+test('98堂/色花堂 站点识别与 URL 参数/TID 解析', () => {
+    assert.equal(isForumSiteContext('98堂 - 首页', 'https://115.com/?ct=file'), false);
+    assert.equal(isForumSiteContext('Google', 'https://www.google.com/'), false);
+    assert.equal(isForumSiteContext('亚洲无码原创 - 色花堂', 'https://mirror-example.com/forum-36-1.html'), true);
+    assert.equal(isForumSiteContext('98堂', 'https://example.org/forum.php'), true);
+    assert.equal(isForumSiteContext('Forum', 'https://www.sehuatang.org/forum.php?mod=forumdisplay&fid=36'), true);
+
+    assert.deepEqual(
+        parseForumUrlParams('https://www.sehuatang.org/forum.php?mod=forumdisplay&fid=36&page=2'),
+        { mod: 'forumdisplay', fid: '36', page: '2' }
+    );
+    assert.deepEqual(
+        parseForumUrlParams('https://www.sehuatang.org/forum-103-5.html'),
+        { mod: 'forumdisplay', fid: '103', page: '5' }
+    );
+
+    assert.equal(extractTidFromHref('forum.php?mod=viewthread&tid=223344&extra=page%3D1'), '223344');
+    assert.equal(extractTidFromHref('thread-998877-1-1.html'), '998877');
+    assert.equal(extractTidFromHref('', 'normalthread_556677'), '556677');
+});
+
+test('帖子资源提取（代码块磁力/Base32磁力/ed2k/附件大小写与防重复）', () => {
+    const html = `
+        <div class="t_f">
+            <div class="blockcode"><div><ol>
+                <li>magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567&amp;dn=sample</li>
+                <li>不是链接的普通文本</li>
+            </ol></div></div>
+            <p>内联 Base32 磁力：magnet:?xt=urn:btih:MFRGGZDFMZTWQ2LKNNWG23TPOBYXE43U 下载</p>
+            <p>重复的 40位 Hash（不应重复提取）：magnet:?xt=urn:btih:0123456789ABCDEF0123456789ABCDEF01234567</p>
+            <a id="ed2k_1" href="ed2k://|file|SSIS-001.mp4|1024|abcdef0123456789abcdef0123456789|/">下载</a>
+            <a>无href安全占位</a>
+            <a href="forum.php?mod=attachment&aid=1001">SSIS-001.TORRENT</a>
+            <a href="forum.php?mod=attachment&aid=1002">preview.png</a>
+        </div>
+        <div class="pattl">
+            <a href="forum.php?mod=attachment&aid=1003">subtitle.Zip</a>
+        </div>
+    `;
+    const res = extractThreadResources(html, {
+        baseOrigin: 'https://www.sehuatang.org',
+        includeAttachments: true
+    });
+    assert.equal(res.links.length, 3);
+    assert.equal(res.links[0], 'magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567&dn=sample');
+    assert.equal(res.links[1], 'ed2k://|file|SSIS-001.mp4|1024|abcdef0123456789abcdef0123456789|/');
+    assert.equal(res.links[2], 'magnet:?xt=urn:btih:MFRGGZDFMZTWQ2LKNNWG23TPOBYXE43U');
+
+    assert.equal(res.attachments.length, 2);
+    assert.equal(res.attachments[0].url, 'https://www.sehuatang.org/forum.php?mod=attachment&aid=1001');
+    assert.equal(res.attachments[1].url, 'https://www.sehuatang.org/forum.php?mod=attachment&aid=1003');
+
+    assert.equal(isForumAttachmentHref('forum.php?mod=attachment&aid=1', 'a.RAR'), true);
+    assert.equal(isForumAttachmentHref('', 'a.zip'), false);
+    assert.equal(isForumAttachmentHref('forum.php?mod=attachment&aid=1', 'cover.jpg'), false);
+});
+
+test('一键复制全部帖子链接格式化 & 本地日期时间筛选', () => {
+    const posts = [
+        { tid: '1', url: 'https://www.sehuatang.org/forum.php?mod=viewthread&tid=1', title: '标题一', code: 'ABW-015' },
+        { tid: '1', url: 'https://www.sehuatang.org/forum.php?mod=viewthread&tid=1', title: '重复URL', code: 'ABW-015' },
+        { tid: '2', url: 'javascript:alert(1)', title: '非法协议', code: '' },
+        { tid: '3', url: 'https://www.sehuatang.org/forum.php?mod=viewthread&tid=3', title: '标题三', code: '' }
+    ];
+    assert.equal(
+        formatThreadLinksText(posts, { includeTitle: false }),
+        'https://www.sehuatang.org/forum.php?mod=viewthread&tid=1\nhttps://www.sehuatang.org/forum.php?mod=viewthread&tid=3'
+    );
+    assert.equal(
+        formatThreadLinksText(posts, { includeTitle: true }),
+        '[ABW-015] 标题一 https://www.sehuatang.org/forum.php?mod=viewthread&tid=1\n标题三 https://www.sehuatang.org/forum.php?mod=viewthread&tid=3'
+    );
+
+    const now = new Date(2026, 10, 18, 15, 30, 0); // 2026-11-18 local
+    assert.equal(filterForumPostByTime('2026-11-18', 1, now), true);
+    assert.equal(filterForumPostByTime('2026-11-17', 1, now), false);
+    assert.equal(filterForumPostByTime('2026-11-17', 2, now), true);
+    assert.equal(filterForumPostByTime('2026-11-16', 2, now), false);
+    assert.equal(filterForumPostByTime('无效日期', 7, now), false);
+});
+
+test('高清海报检索计划、番号精确边界匹配与相对 URL 解析', () => {
+    assert.equal(resolvePosterUrl('//www.javbus.com/pics/cover/12ab_b.jpg', 'https://www.javbus.com/IPZ-405'), 'https://www.javbus.com/pics/cover/12ab_b.jpg');
+    assert.equal(resolvePosterUrl('/pics/cover/12ab_b.jpg', 'https://www.javbus.com/IPZ-405'), 'https://www.javbus.com/pics/cover/12ab_b.jpg');
+    assert.equal(resolvePosterUrl('/images/none.gif', 'https://www.javbus.com/IPZ-405'), '');
+
+    assert.equal(isMatchingAvCode('IPZ-405 示例电影', 'IPZ-405'), true);
+    assert.equal(isMatchingAvCode('IPZ-405 示例电影', 'IPZ-40'), false);
+    assert.equal(isMatchingAvCode('1PONDO 010215_001', '1PONDO-010215-001'), true);
+
+    assert.deepEqual(normalizeSearchCodeForSite('CARIB-102412-001'), {
+        queryCode: '102412-001', isUncensored: true, isFc2: false
+    });
+    assert.deepEqual(normalizeSearchCodeForSite('FC2-PPV-3456789'), {
+        queryCode: 'FC2-PPV-3456789', isUncensored: true, isFc2: true
+    });
+
+    const stdPlan = buildPosterFetchPlan('IPZ-405', 'javbus');
+    assert.equal(stdPlan[0].url, 'https://www.javbus.com/IPZ-405');
+    assert.equal(stdPlan[1].url, 'https://www.javbus.com/search/IPZ-405');
+    assert.equal(stdPlan[2].site, 'javdb');
+    assert.equal(stdPlan[3].site, 'avsox');
+
+    const fc2Plan = buildPosterFetchPlan('FC2-PPV-3456789', 'javbus');
+    assert.equal(fc2Plan[0].site, 'javdb'); // FC2 自动跳过 JavBus 直达 JavDB/AVSOX
+});
+
+test('JavBus / JavDB / AVSOX 高清封面与搜索结果 HTML 解析', () => {
+    const jbDetail = parseJavBusHtml(
+        `<html><body><h3>IPZ-405 示例作品名</h3><a class="bigImage" href="/pics/cover/4abc_b.jpg"><img src="/pics/cover/4abc_b.jpg"></a><p><span class="header">發行日期:</span> 2014-06-01</p></body></html>`,
+        'https://www.javbus.com/IPZ-405',
+        'IPZ-405'
+    );
+    assert.equal(jbDetail.kind, 'detail');
+    assert.equal(jbDetail.posterUrl, 'https://www.javbus.com/pics/cover/4abc_b.jpg');
+    assert.equal(jbDetail.date, '2014-06-01');
+
+    const jbSearch = parseJavBusHtml(
+        `<a class="movie-box" href="/IPZ-40"><img src="/pics/thumb/bad.jpg"><date>IPZ-40</date></a>
+         <a class="movie-box" href="https://www.javbus.com/IPZ-405"><img src="/pics/thumb/good.jpg"><date>IPZ-405</date></a>`,
+        'https://www.javbus.com/search/IPZ-405',
+        'IPZ-405'
+    );
+    assert.equal(jbSearch.kind, 'search_hit');
+    assert.equal(jbSearch.detailUrl, 'https://www.javbus.com/IPZ-405');
+    assert.equal(jbSearch.fallbackPosterUrl, 'https://www.javbus.com/pics/cover/good_b.jpg');
+
+    const jdbSearch = parseJavDbHtml(
+        `<a class="box" href="/v/xyz123" title="IPZ-405 标题"><img data-src="https://c0.jdbstatic.com/thumbs/xy/xyz123.jpg"><strong>IPZ-405</strong></a>`,
+        'https://javdb.com/search?q=IPZ-405&f=all',
+        'IPZ-405'
+    );
+    assert.equal(jdbSearch.kind, 'search_hit');
+    assert.equal(jdbSearch.detailUrl, 'https://javdb.com/v/xyz123');
+    assert.equal(jdbSearch.fallbackPosterUrl, 'https://c0.jdbstatic.com/covers/xy/xyz123.jpg');
+
+    const jdbDetail = parseJavDbHtml(
+        `<strong class="current-title">IPZ-405 HD Title</strong><img class="video-cover" src="https://c0.jdbstatic.com/covers/xy/xyz123.jpg">`,
+        'https://javdb.com/v/xyz123',
+        'IPZ-405'
+    );
+    assert.equal(jdbDetail.kind, 'detail');
+    assert.equal(jdbDetail.posterUrl, 'https://c0.jdbstatic.com/covers/xy/xyz123.jpg');
+
+    const avsoxSearch = parseAvsoxHtml(
+        `<a class="movie-box" href="//avsox.click/cn/movie/abc"><img src="https://jp.netcdn.space/digital/video/h_001/cover.jpg"><date>HEYZO-1234</date></a>`,
+        'https://avsox.click/cn/search/HEYZO-1234',
+        'HEYZO-1234'
+    );
+    assert.equal(avsoxSearch.kind, 'search_hit');
+    assert.equal(avsoxSearch.source, 'AVSOX');
+    assert.equal(avsoxSearch.detailUrl, 'https://avsox.click/cn/movie/abc');
+
+    const blocked = parseJavBusHtml('<html><title>Just a moment...</title></html>', 'https://www.javbus.com/IPZ-405', 'IPZ-405');
+    assert.equal(blocked.kind, 'blocked');
 });

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="lsjBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="lsjCard" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="lsjRing" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#lsjBg)" stroke="#334155" stroke-width="1"/>
+  <rect x="15" y="14" width="26" height="33" rx="4.5" transform="rotate(-10 28 30.5)" fill="url(#lsjCard)" opacity="0.92"/>
+  <rect x="20" y="17" width="28" height="28" rx="5.5" fill="rgba(148,163,184,0.16)" stroke="rgba(226,232,240,0.45)" stroke-width="1.2"/>
+  <circle cx="34" cy="31" r="10" fill="none" stroke="url(#lsjRing)" stroke-width="2.1"/>
+  <line x1="34" y1="18.5" x2="34" y2="23" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+  <line x1="34" y1="39" x2="34" y2="43.5" stroke="#818cf8" stroke-width="2" stroke-linecap="round"/>
+  <line x1="21.5" y1="31" x2="26" y2="31" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+  <line x1="42" y1="31" x2="46.5" y2="31" stroke="#818cf8" stroke-width="2" stroke-linecap="round"/>
+  <rect x="28.5" y="27" width="11" height="8" rx="1.8" fill="none" stroke="#e0f2fe" stroke-width="1.6"/>
+  <polygon points="32.8,29.1 36.6,31 32.8,32.9" fill="#e0f2fe"/>
+  <path d="M48 9.5 L49.4 13.6 L53.5 15 L49.4 16.4 L48 20.5 L46.6 16.4 L42.5 15 L46.6 13.6 Z" fill="#34d399"/>
+</svg>

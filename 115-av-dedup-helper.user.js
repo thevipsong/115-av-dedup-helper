@@ -1,23 +1,36 @@
 // ==UserScript==
-// @name         115网盘番号查重与非番号清理助手
+// @name         老司机工作台
 // @namespace    https://github.com/thevipsong/115-av-dedup-helper
-// @version      5.1.0
-// @description  专为115网盘设计的番号整理与查重神器：SHA1二进制同源查重、智能优选策略、分集独立保护、自定义模板重命名(重名冲突防护+字幕联动)、智能建夹归档与集中提取、残损小视频专查、元数据直达(JavBus/JavDB/AVSOX)、缩略图悬浮预览、清单导出与查漏比对、撤销还原、IndexedDB缓存、深色模式及Anti-WAF防风控装甲。
+// @version      5.2.0
+// @description  老司机工作台：专为115网盘与98堂/色花堂打造的一体化影库整理神器。网盘端支持SHA1同源查重、智能优选、模板重命名、归档提取、自动检索高清海报、夜间模式、清单查漏与Anti-WAF装甲；论坛端支持一键复制所有/已选帖子链接、批量提取磁力/ed2k/附件、版块时间筛选、列表图文预览增强，并跨站自动标记[115已有]。
 // @author       thevipsong
 // @license      MIT
+// @icon         data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22b%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%230f172a%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%231e293b%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22c%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%236366f1%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%232563eb%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22r%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2338bdf8%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23818cf8%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%2256%22%20height%3D%2256%22%20rx%3D%2214%22%20fill%3D%22url(%23b)%22%2F%3E%3Crect%20x%3D%2215%22%20y%3D%2214%22%20width%3D%2226%22%20height%3D%2233%22%20rx%3D%224.5%22%20transform%3D%22rotate(-10%2028%2030.5)%22%20fill%3D%22url(%23c)%22%20opacity%3D%22.92%22%2F%3E%3Crect%20x%3D%2220%22%20y%3D%2217%22%20width%3D%2228%22%20height%3D%2228%22%20rx%3D%225.5%22%20fill%3D%22rgba(148%2C163%2C184%2C.18)%22%20stroke%3D%22rgba(226%2C232%2C240%2C.45)%22%20stroke-width%3D%221.2%22%2F%3E%3Ccircle%20cx%3D%2234%22%20cy%3D%2231%22%20r%3D%2210%22%20fill%3D%22none%22%20stroke%3D%22url(%23r)%22%20stroke-width%3D%222.2%22%2F%3E%3Crect%20x%3D%2228.5%22%20y%3D%2227%22%20width%3D%2211%22%20height%3D%228%22%20rx%3D%221.8%22%20fill%3D%22none%22%20stroke%3D%22%23e0f2fe%22%20stroke-width%3D%221.6%22%2F%3E%3Cpolygon%20points%3D%2232.8%2C29.1%2036.6%2C31%2032.8%2C32.9%22%20fill%3D%22%23e0f2fe%22%2F%3E%3Cpath%20d%3D%22M48%209.5L49.4%2013.6L53.5%2015L49.4%2016.4L48%2020.5L46.6%2016.4L42.5%2015L46.6%2013.6Z%22%20fill%3D%22%2334d399%22%2F%3E%3C%2Fsvg%3E
 // @homepageURL  https://github.com/thevipsong/115-av-dedup-helper
 // @supportURL   https://github.com/thevipsong/115-av-dedup-helper/issues
 // @updateURL    https://raw.githubusercontent.com/thevipsong/115-av-dedup-helper/main/115-av-dedup-helper.user.js
 // @downloadURL  https://raw.githubusercontent.com/thevipsong/115-av-dedup-helper/main/115-av-dedup-helper.user.js
 // @match        https://115.com/*
+// @match        https://*.sehuatang.org/*
+// @match        https://*.sehuatang.net/*
+// @match        *://*/*
 // @grant        GM_xmlhttpRequest
+// @grant        GM_setValue
+// @grant        GM_getValue
+// @grant        GM_setClipboard
+// @connect      javbus.com
+// @connect      javdb.com
+// @connect      avsox.click
+// @connect      dmm.co.jp
+// @connect      jdbstatic.com
+// @connect      *
 // @run-at       document-end
 // ==/UserScript==
 
 (function () {
     'use strict';
 
-    const APP_VERSION = '5.1.0';
+    const APP_VERSION = '5.2.0';
     const SETTINGS_KEY = 'av_dedup_settings_v5';
     const HISTORY_KEY = 'av_dedup_rename_history_v5';
     const DB_NAME = 'av_dedup_cache_v5';
@@ -54,14 +67,414 @@
         eye: `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
         external: `<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>`,
         sha: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M9 6.8a6 6 0 0 1 9 5.2v2"/></svg>`,
-        subtitle: `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="18" height="14" x="3" y="5" rx="2"/><path d="M7 15h4M15 15h2M7 11h2M13 11h4"/></svg>`
+        subtitle: `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="18" height="14" x="3" y="5" rx="2"/><path d="M7 15h4M15 15h2M7 11h2M13 11h4"/></svg>`,
+        link: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`,
+        magnet: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="m6 15-4-4 6.75-6.77a7.79 7.79 0 0 1 11 11L13 22l-4-4 6.39-6.36a2.14 2.14 0 0 0-3-3L6 15"/><path d="m5 8 4 4"/><path d="m12 15 4 4"/></svg>`
     };
+
+    let brandSvgSeq = 0;
+    function createBrandIconSvg(size = 20) {
+        const uid = ++brandSvgSeq;
+        return `<svg viewBox="0 0 64 64" width="${size}" height="${size}" style="flex-shrink:0; display:block; border-radius:${Math.round(size * 0.24)}px;">
+            <defs>
+                <linearGradient id="lsjBg_${uid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0f172a"/><stop offset="100%" stop-color="#1e293b"/></linearGradient>
+                <linearGradient id="lsjCard_${uid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#2563eb"/></linearGradient>
+                <linearGradient id="lsjRing_${uid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#818cf8"/></linearGradient>
+            </defs>
+            <rect x="2" y="2" width="60" height="60" rx="15" fill="url(#lsjBg_${uid})" stroke="rgba(148,163,184,0.3)" stroke-width="1.5"/>
+            <rect x="15" y="14" width="26" height="33" rx="4.5" transform="rotate(-10 28 30.5)" fill="url(#lsjCard_${uid})" opacity="0.94"/>
+            <rect x="20" y="17" width="28" height="28" rx="5.5" fill="rgba(148,163,184,0.18)" stroke="rgba(226,232,240,0.48)" stroke-width="1.3"/>
+            <circle cx="34" cy="31" r="10" fill="none" stroke="url(#lsjRing_${uid})" stroke-width="2.3"/>
+            <line x1="34" y1="18.5" x2="34" y2="23" stroke="#38bdf8" stroke-width="2.1" stroke-linecap="round"/>
+            <line x1="34" y1="39" x2="34" y2="43.5" stroke="#818cf8" stroke-width="2.1" stroke-linecap="round"/>
+            <line x1="21.5" y1="31" x2="26" y2="31" stroke="#38bdf8" stroke-width="2.1" stroke-linecap="round"/>
+            <line x1="42" y1="31" x2="46.5" y2="31" stroke="#818cf8" stroke-width="2.1" stroke-linecap="round"/>
+            <rect x="28.5" y="27" width="11" height="8" rx="1.8" fill="none" stroke="#e0f2fe" stroke-width="1.8"/>
+            <polygon points="32.8,29.1 36.6,31 32.8,32.9" fill="#e0f2fe"/>
+            <path d="M48 9.5 L49.4 13.6 L53.5 15 L49.4 16.4 L48 20.5 L46.6 16.4 L42.5 15 L46.6 13.6 Z" fill="#34d399"/>
+        </svg>`;
+    }
+
+    const FORUM_OWNED_CODES_GM_KEY = 'av_dedup_owned_codes_v1';
+    const FORUM_SETTINGS_GM_KEY = 'av_forum_enhancer_settings_v1';
+    const FORUM_DICT_GM_KEY = 'av_forum_board_dict_v1';
+
+    const FORUM_ATTACHMENT_EXTS = new Set(['txt', 'rar', 'zip', '7z', 'torrent']);
+    const FORUM_TIME_FILTERS = [
+        ['一天内', 1],
+        ['两天内', 2],
+        ['三天内', 3],
+        ['七天内', 7],
+        ['一个月内', 30]
+    ];
+
+    const FORUM_BOARD_DICT = {
+        2: [['684', '国产无码', 1], ['685', '主播录制', 1], ['686', '360水滴', 1], ['687', '厕所偷拍', 1]],
+        36: [
+            ['586', 'sm-miracle', 1], ['822', 'cospuri', 1], ['724', '盗窃系列', 1], ['723', 'japornxxx', 1],
+            ['683', 'レズのしんぴ', 1], ['672', '无码破解', 1], ['671', '加勒比PPV', 1], ['660', '金髪天國', 1],
+            ['654', '无码流出', 1], ['631', 'urabukkake', 1], ['619', 'handjobjapan', 1], ['618', 'spermmania', 1],
+            ['591', 'fellatiojapan', 1], ['590', 'uralesbian', 1], ['589', 'legsjapan', 1], ['587', 'roselip-fetish', 1],
+            ['368', 'FC2PPV', 1], ['583', '本生素人TV', 1], ['553', 'エッチな4610', 1], ['552', 'エッチな0930', 1],
+            ['551', '人妻斬り', 1], ['537', 'xxx-av', 1], ['523', '熟女俱樂部', 1], ['449', '东京热', 1],
+            ['379', '店長推薦', 1], ['375', 'heyppv', 1], ['374', 'pacoma', 1], ['373', '女体のしんぴ', 1],
+            ['372', '10musu', 1], ['371', '一本道系', 1], ['370', '加勒比系', 1], ['369', 'HEYZO', 1]
+        ],
+        37: [],
+        38: [],
+        39: [],
+        139: [
+            ['673', '凌辱虐情', 1], ['674', '唯美纯爱', 1], ['675', '都市奇缘', 1], ['676', '女警英雄', 1],
+            ['677', '青春校园', 1], ['678', '历史古香', 1], ['679', '同人衍生', 1], ['680', '作者合集', 1],
+            ['681', '绿意盎然', 1], ['682', '玄幻武侠', 1], ['722', '版务', 0]
+        ],
+        95: [
+            ['716', '情色分享', 1], ['713', '图文故事', 0], ['709', '困惑求助', 0], ['710', '技术交流', 0],
+            ['711', '心情感悟', 0], ['712', 'AV新闻', 0], ['714', '今日话题', 0], ['715', '不吐不快', 0],
+            ['843', '游客投稿', 0], ['662', '版务管理', 0]
+        ],
+        103: [['480', '有码高清', 1], ['481', '无码高清', 1]],
+        104: [
+            ['533', 'G-area', 1], ['728', '300MIUM', 1], ['729', '332NAMA', 1], ['730', '326EVA', 1],
+            ['731', '328HMDN', 1], ['807', '336KNB', 1], ['808', '200GANA', 1], ['809', '300MAAN', 1],
+            ['810', '300NTK', 1], ['811', '390JAC', 1], ['812', '326SCP', 1], ['727', '259LUXU', 1],
+            ['726', 'SIRO', 1], ['534', 'Mywife', 1], ['535', 'S-cute', 1], ['536', 'FC2', 1],
+            ['557', 'himemix', 1], ['563', 'getchu', 1], ['588', 'siro-hame', 1], ['626', 'r-file', 1],
+            ['627', 'giga-web', 1], ['632', 'knights-visual', 1], ['725', '230OREX', 1], ['813', '其他系列', 1]
+        ],
+        107: [
+            ['629', '巴西三级', 1], ['628', '克罗地亚三级', 1], ['624', '德国三级', 1], ['623', '美国写真', 1],
+            ['622', '俄罗斯三级', 1], ['621', '墨西哥三级', 1], ['620', '西班牙三级', 1], ['617', '国产写真', 1],
+            ['616', '波兰三级', 1], ['615', '泰国四级', 1], ['614', '阿根廷三级', 1], ['613', '香港四级', 1],
+            ['612', '瑞士四级', 1], ['611', '瑞士三级', 1], ['610', '挪威三级', 1], ['609', '台湾三级', 1],
+            ['608', '荷兰三级', 1], ['607', '意大利三级', 1], ['606', '加拿大三级', 1], ['605', '法国四级', 1],
+            ['604', '泰国三级', 1], ['603', '台湾四级', 1], ['602', '英国三级', 1], ['601', '英国四级', 1],
+            ['600', '国产四级', 1], ['599', '美国四级', 1], ['598', '法国三级', 1], ['597', '国产三级', 1],
+            ['596', '香港三级', 1], ['595', '美国三级', 1], ['594', '日本三级', 1], ['593', '韩国三级', 1],
+            ['592', '日本写真', 1], ['625', '丹麦三级', 1], ['630', '意大利四级', 1], ['633', '德国四级', 1],
+            ['634', '瑞典四级', 1], ['645', '丹麦四级', 1], ['646', '荷兰写真', 1], ['650', '比利时四级', 1],
+            ['655', '澳大利亚三级', 1], ['656', '印度三级', 1], ['657', '菲律宾三级', 1], ['658', '新加坡写真', 1],
+            ['659', '韩国写真', 1], ['667', '法国写真', 1], ['668', '英国写真', 1], ['669', '俄罗斯写真', 1],
+            ['670', '智利三级', 1]
+        ],
+        141: [
+            ['688', '个人导航', 0], ['689', '国产合集', 1], ['690', '欧美合集', 1], ['691', '日本合集', 1],
+            ['692', 'AI破解/换脸', 1], ['693', '动漫/二次元', 1], ['694', '蓝光原盘', 1], ['695', '套图系列', 1],
+            ['696', '其他資源', 1], ['705', '自压/增强', 1], ['708', '版务管理', 0], ['844', '合集推荐', 1]
+        ],
+        142: [
+            ['697', '国产自拍', 1], ['698', '直播视频', 1], ['699', '亚洲无码', 1], ['700', '亚洲有码', 1],
+            ['701', '偷拍視頻', 1], ['702', '动漫/二次元', 1], ['703', '欧美风情', 1], ['704', '其他資源', 1],
+            ['706', '合集资源', 1], ['707', '版务管理', 0]
+        ],
+        151: [['823', '无码', 1], ['824', '有码', 1]],
+        152: [],
+        160: [],
+        166: [['851', 'AI换脸', 1], ['852', 'AI破解', 1], ['853', 'AI增强', 1], ['854', 'AI作图', 1], ['855', '教程工具', 1], ['856', '版务管理', 0]],
+        97: [['857', '自整理', 1], ['858', '原档合集', 1], ['859', '主播录制', 1], ['860', '其他资源', 1], ['861', '版务管理', 0]]
+    };
+
+    function cloneDefaultForumDict() {
+        const out = {};
+        for (const [k, list] of Object.entries(FORUM_BOARD_DICT)) {
+            out[k] = Array.isArray(list) ? list.map(item => [...item]) : [];
+        }
+        return out;
+    }
+
+    function gmGetValue(key, fallback) {
+        try {
+            if (typeof GM_getValue === 'function') {
+                const val = GM_getValue(key, fallback);
+                return val === undefined ? fallback : val;
+            }
+        } catch (e) {}
+        return safeGetLocalStorage(key, fallback);
+    }
+
+    function gmSetValue(key, value) {
+        try {
+            if (typeof GM_setValue === 'function') {
+                GM_setValue(key, value);
+                return true;
+            }
+        } catch (e) {}
+        safeSetLocalStorage(key, value);
+        return false;
+    }
+
+    async function copyTextToClipboard(text) {
+        const str = String(text || '');
+        if (!str) return false;
+        try {
+            if (typeof GM_setClipboard === 'function') {
+                GM_setClipboard(str, 'text');
+                return true;
+            }
+        } catch (e) {}
+        try {
+            if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                await navigator.clipboard.writeText(str);
+                return true;
+            }
+        } catch (e) {}
+        try {
+            if (typeof document !== 'undefined' && document.body) {
+                const ta = document.createElement('textarea');
+                ta.value = str;
+                ta.setAttribute('readonly', '');
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                const ok = document.execCommand('copy');
+                document.body.removeChild(ta);
+                if (ok) return true;
+            }
+        } catch (e) {}
+        return false;
+    }
+
+    function isForumSiteContext(title, url) {
+        let host = '';
+        if (url) {
+            try {
+                host = new URL(url).hostname.toLowerCase();
+            } catch (e) {
+                const m = String(url).match(/^[a-z]+:\/\/([^/:?#]+)/i);
+                if (m) host = m[1].toLowerCase();
+            }
+        }
+        if (host === '115.com' || host.endsWith('.115.com')) return false;
+        const cleanTitle = String(title || '');
+        if (cleanTitle.includes('色花堂') || cleanTitle.includes('98堂')) return true;
+        if (/(^|\.)sehuatang\.(org|net)$/i.test(host)) return true;
+        return false;
+    }
+
+    function parseForumUrlParams(url) {
+        const raw = String(url || '');
+        const params = {};
+        const qIdx = raw.indexOf('?');
+        if (qIdx !== -1) {
+            const query = raw.slice(qIdx + 1).split('#')[0];
+            for (const pair of query.split('&')) {
+                if (!pair) continue;
+                const eqIdx = pair.indexOf('=');
+                if (eqIdx === -1) continue;
+                const k = pair.slice(0, eqIdx).trim();
+                const v = pair.slice(eqIdx + 1).trim();
+                if (k) {
+                    try { params[k] = decodeURIComponent(v); } catch (e) { params[k] = v; }
+                }
+            }
+        }
+        if (!params.mod && !params.fid) {
+            const staticForum = raw.match(/forum-(\d+)-(\d+)\.html/i);
+            if (staticForum) {
+                params.mod = 'forumdisplay';
+                params.fid = staticForum[1];
+                params.page = staticForum[2];
+            } else {
+                const staticThread = raw.match(/thread-(\d+)-(\d+)-(\d+)\.html/i);
+                if (staticThread) {
+                    params.mod = 'viewthread';
+                    params.tid = staticThread[1];
+                    params.extra_page = staticThread[2];
+                }
+            }
+        }
+        return params;
+    }
+
+    function extractTidFromHref(href, fallbackId = '') {
+        const fb = String(fallbackId || '');
+        if (fb.startsWith('normalthread_')) return fb.slice('normalthread_'.length);
+        const h = String(href || '');
+        const tidQuery = h.match(/[?&]tid=(\d+)/i);
+        if (tidQuery) return tidQuery[1];
+        const tidStatic = h.match(/thread-(\d+)-/i);
+        if (tidStatic) return tidStatic[1];
+        return '';
+    }
+
+    function isForumAttachmentHref(href, labelText) {
+        const h = String(href || '').trim();
+        if (!h || !/forum\.php\?mod=attachment/i.test(h)) return false;
+        const label = String(labelText || '').trim();
+        const parts = label.split('.');
+        if (parts.length < 2) return false;
+        const suffix = parts[parts.length - 1].toLowerCase().trim();
+        return FORUM_ATTACHMENT_EXTS.has(suffix);
+    }
+
+    function resolveForumAbsoluteUrl(href, baseOrigin) {
+        const raw = String(href || '').trim();
+        if (!raw) return '';
+        if (/^https?:\/\//i.test(raw)) return sanitizeHttpUrl(raw);
+        if (raw.startsWith('ed2k://') || /^magnet:/i.test(raw)) return raw;
+        const origin = String(baseOrigin || '').replace(/\/+$/, '');
+        if (!origin) return '';
+        const joined = raw.startsWith('/') ? `${origin}${raw}` : `${origin}/${raw.replace(/^\.?\//, '')}`;
+        return sanitizeHttpUrl(joined);
+    }
+
+    function extractBtihKey(magnetUrl) {
+        const m = String(magnetUrl || '').match(/btih:([a-zA-Z0-9]{32,40})/i);
+        return m ? m[1].toLowerCase() : '';
+    }
+
+    function extractThreadResources(htmlOrDoc, options = {}) {
+        const baseOrigin = options.baseOrigin || '';
+        const includeAttachments = options.includeAttachments !== false;
+        const links = [];
+        const attachments = [];
+        const seenLinks = new Set();
+        const seenBtih = new Set();
+        const seenAttachments = new Set();
+
+        const pushLink = (raw) => {
+            const cleaned = String(raw || '').replace(/\s+/g, '');
+            if (!cleaned) return;
+            if (!/^ed2k:\/\//i.test(cleaned) && !/^magnet:\?/i.test(cleaned)) return;
+            const norm = cleaned.toLowerCase();
+            const btih = /^magnet:/i.test(cleaned) ? extractBtihKey(cleaned) : '';
+            if (seenLinks.has(norm) || (btih && seenBtih.has(btih))) return;
+            seenLinks.add(norm);
+            if (btih) seenBtih.add(btih);
+            links.push(cleaned);
+        };
+
+        const pushAttachment = (href, label) => {
+            if (!includeAttachments || !isForumAttachmentHref(href, label)) return;
+            const resolved = resolveForumAbsoluteUrl(href, baseOrigin) || String(href).trim();
+            if (!resolved || seenAttachments.has(resolved)) return;
+            seenAttachments.add(resolved);
+            attachments.push({ url: resolved, name: String(label || '').trim() });
+        };
+
+        let doc = null;
+        if (htmlOrDoc && typeof htmlOrDoc === 'object' && typeof htmlOrDoc.querySelectorAll === 'function') {
+            doc = htmlOrDoc;
+        } else if (typeof DOMParser !== 'undefined' && typeof htmlOrDoc === 'string') {
+            try {
+                doc = new DOMParser().parseFromString(htmlOrDoc, 'text/html');
+            } catch (e) {
+                doc = null;
+            }
+        }
+
+        if (doc) {
+            doc.querySelectorAll('.t_f .blockcode li').forEach(li => pushLink(li.textContent));
+            doc.querySelectorAll('.t_f a').forEach(a => {
+                const id = a.getAttribute('id') || '';
+                const href = a.getAttribute('href') || '';
+                if (id.startsWith('ed2k')) pushLink(href);
+                pushAttachment(href, a.textContent);
+            });
+            doc.querySelectorAll('.pattl a').forEach(a => {
+                pushAttachment(a.getAttribute('href') || '', a.textContent);
+            });
+            let postText = '';
+            doc.querySelectorAll('.t_f').forEach(el => { postText += '\n' + (el.textContent || ''); });
+            const magnetRe = /magnet:\?xt=urn:btih:[a-zA-Z0-9]{32,40}/gi;
+            const matches = postText.match(magnetRe) || [];
+            for (const m of matches) pushLink(m);
+            return { links, attachments };
+        }
+
+        const html = String(htmlOrDoc || '');
+        const stripTags = (s) => String(s || '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/&amp;/g, '&')
+            .replace(/&nbsp;/gi, ' ')
+            .trim();
+
+        const blockcodeRe = /<div[^>]*class=["'][^"']*blockcode[^"']*["'][^>]*>[\s\S]*?<\/div>/gi;
+        let bm;
+        while ((bm = blockcodeRe.exec(html)) !== null) {
+            const liRe = /<li[^>]*>([\s\S]*?)<\/li>/gi;
+            let lm;
+            while ((lm = liRe.exec(bm[0])) !== null) {
+                pushLink(stripTags(lm[1]));
+            }
+        }
+
+        const anchorRe = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
+        let am;
+        while ((am = anchorRe.exec(html)) !== null) {
+            const attrs = am[1];
+            const inner = stripTags(am[2]);
+            const idMatch = attrs.match(/\bid\s*=\s*["']([^"']*)["']/i);
+            const hrefMatch = attrs.match(/\bhref\s*=\s*["']([^"']*)["']/i);
+            const id = idMatch ? idMatch[1] : '';
+            const href = hrefMatch ? hrefMatch[1].replace(/&amp;/g, '&') : '';
+            if (id.startsWith('ed2k')) pushLink(href);
+            pushAttachment(href, inner);
+        }
+
+        const plainText = stripTags(html.replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' '));
+        const magnetRe = /magnet:\?xt=urn:btih:[a-zA-Z0-9]{32,40}/gi;
+        const magnetMatches = plainText.match(magnetRe) || [];
+        for (const m of magnetMatches) pushLink(m);
+
+        const ed2kRawRe = /ed2k:\/\/\|file\|[^|\s<>"']+\|\d+\|[a-fA-F0-9]{32}\|[^\s<>"']*\//gi;
+        const ed2kMatches = plainText.match(ed2kRawRe) || [];
+        for (const e of ed2kMatches) pushLink(e);
+
+        return { links, attachments };
+    }
+
+    function formatThreadLinksText(posts, options = {}) {
+        const includeTitle = Boolean(options.includeTitle);
+        const dedup = options.dedup !== false;
+        const list = Array.isArray(posts) ? posts : [];
+        const lines = [];
+        const seen = new Set();
+        for (const post of list) {
+            const url = sanitizeHttpUrl(post && post.url);
+            if (!url) continue;
+            if (dedup && seen.has(url)) continue;
+            seen.add(url);
+            if (includeTitle) {
+                const tag = post.code ? `[${post.code}] ` : '';
+                const title = String(post.title || '').replace(/[\r\n]+/g, ' ').trim();
+                lines.push(title || tag ? `${tag}${title} ${url}`.trim() : url);
+            } else {
+                lines.push(url);
+            }
+        }
+        return lines.join('\n');
+    }
+
+    function parseCalendarDate(dateStr) {
+        const raw = String(dateStr || '').trim();
+        if (!raw) return null;
+        const ymd = raw.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+        if (ymd) {
+            const d = new Date(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3]));
+            return Number.isNaN(d.getTime()) ? null : d;
+        }
+        const parsed = new Date(raw);
+        if (Number.isNaN(parsed.getTime())) return null;
+        return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+    }
+
+    function filterForumPostByTime(dateStr, maxDays, nowDate = new Date()) {
+        if (!maxDays || maxDays <= 0) return true;
+        const postDay = parseCalendarDate(dateStr);
+        if (!postDay) return false;
+        const nowDay = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate());
+        const diffDays = Math.ceil((nowDay.getTime() - postDay.getTime()) / (1000 * 60 * 60 * 24));
+        return diffDays < maxDays;
+    }
 
     const DEFAULT_SETTINGS = {
         renameTemplate: 'default',       // 'default' | 'sub_uc' | 'badges' | 'custom'
         customTemplate: '{code}{part} {tags}.{ext}',
         syncSubtitles: true,
         preferredSearchSite: 'javbus',   // 'javbus' | 'javdb' | 'avsox'
+        posterPriority: 'hd_first',      // 'hd_first' | 'fallback' | 'off'
         ignoreFolders: [],               // Array<string>
         customPrefixes: [],              // 自定义扩展前缀白名单
         customBlacklist: [],             // 自定义屏蔽词黑名单
@@ -284,14 +697,14 @@
             .replace(/\.([a-zA-Z0-9]{2,5})$/, '')
             .replace(/[-_ ](?:part|disc|cd)[-_ ]?[a-z](?![a-z0-9])/gi, ' ');
 
-        if (/4k|2160p/i.test(stemNoPart)) badges.push({ text: '4K', color: '#6f42c1', bg: '#f3e8ff' });
-        if (/60fps|060fps/i.test(stemNoPart)) badges.push({ text: '60FPS', color: '#0d6efd', bg: '#e7f1ff' });
-        if (/1080p|fhd/i.test(stemNoPart)) badges.push({ text: '1080P', color: '#0284c7', bg: '#e0f2fe' });
+        if (/4k|2160p/i.test(stemNoPart)) badges.push({ text: '4K', color: 'var(--av-purple-fg, #6f42c1)', bg: 'var(--av-purple-bg, #f3e8ff)' });
+        if (/60fps|060fps/i.test(stemNoPart)) badges.push({ text: '60FPS', color: 'var(--av-blue-fg, #0d6efd)', bg: 'var(--av-blue-bg, #e7f1ff)' });
+        if (/1080p|fhd/i.test(stemNoPart)) badges.push({ text: '1080P', color: 'var(--av-sky-fg, #0284c7)', bg: 'var(--av-sky-bg, #e0f2fe)' });
         if (/中文字幕|中字|破解|[-_](?:ch|chs|cht)(?=[\s\-_\[\(]|$)|[-_]c(?=[\s\-_\[\(]|$)/i.test(stemNoPart)) {
-            badges.push({ text: '中字', color: '#15803d', bg: '#dcfce7' });
+            badges.push({ text: '中字', color: 'var(--av-sub-fg, #15803d)', bg: 'var(--av-sub-bg, #dcfce7)' });
         }
         if (/uncensored|无码|leak|流出|[-_]uc(?=[\s\-_\[\(]|$)/i.test(stemNoPart)) {
-            badges.push({ text: '无码', color: '#c2410c', bg: '#ffedd5' });
+            badges.push({ text: '无码', color: 'var(--av-orange-fg, #c2410c)', bg: 'var(--av-orange-bg, #ffedd5)' });
         }
         return badges;
     }
@@ -761,13 +1174,13 @@
     function getJunkCategory(file) {
         const ext = getFileExt(file.n);
         const size = Number(file.s || 0);
-        if (SUBTITLE_EXTS.has(ext)) return { label: '外挂字幕(保护)', color: '#15803d', bg: '#dcfce7', isProtected: true };
-        if (SIDECAR_EXTS.has(ext)) return { label: '海报/信息文件', color: '#4338ca', bg: '#e0e7ff', isProtected: true };
-        if (['html', 'htm', 'url', 'chm'].includes(ext)) return { label: '广告网页', color: '#856404', bg: '#fff3cd', isProtected: false };
-        if (['txt', 'nfo', 'torrent', 'doc', 'docx'].includes(ext)) return { label: '文本广告', color: '#0c5460', bg: '#d1ecf1', isProtected: false };
-        if (VIDEO_EXTS.has(ext) && size === 0) return { label: '空视频(0B)', color: '#991b1b', bg: '#fee2e2', isProtected: false };
-        if (VIDEO_EXTS.has(ext) && size < 50 * 1024 * 1024) return { label: '推广/残损短片', color: '#721c24', bg: '#f8d7da', isProtected: false };
-        return { label: '未识别文件', color: '#495057', bg: '#e9ecef', isProtected: false };
+        if (SUBTITLE_EXTS.has(ext)) return { label: '外挂字幕(保护)', color: 'var(--av-sub-fg, #15803d)', bg: 'var(--av-sub-bg, #dcfce7)', isProtected: true };
+        if (SIDECAR_EXTS.has(ext)) return { label: '海报/信息文件', color: 'var(--av-indigo-fg, #4338ca)', bg: 'var(--av-indigo-bg, #e0e7ff)', isProtected: true };
+        if (['html', 'htm', 'url', 'chm'].includes(ext)) return { label: '广告网页', color: 'var(--av-amber-fg, #856404)', bg: 'var(--av-amber-bg, #fff3cd)', isProtected: false };
+        if (['txt', 'nfo', 'torrent', 'doc', 'docx'].includes(ext)) return { label: '文本广告', color: 'var(--av-sky-fg, #0c5460)', bg: 'var(--av-sky-bg, #d1ecf1)', isProtected: false };
+        if (VIDEO_EXTS.has(ext) && size === 0) return { label: '空视频(0B)', color: 'var(--av-rose-fg, #991b1b)', bg: 'var(--av-rose-bg, #fee2e2)', isProtected: false };
+        if (VIDEO_EXTS.has(ext) && size < 50 * 1024 * 1024) return { label: '推广/残损短片', color: 'var(--av-rose-fg, #721c24)', bg: 'var(--av-rose-bg, #f8d7da)', isProtected: false };
+        return { label: '未识别文件', color: 'var(--av-text-muted, #495057)', bg: 'var(--av-surface-2, #e9ecef)', isProtected: false };
     }
 
     function getMetadataSearchUrl(code, site = 'javbus') {
@@ -776,6 +1189,303 @@
         if (site === 'javdb') return `https://javdb.com/search?q=${cleanCode}&f=all`;
         if (site === 'avsox') return `https://avsox.click/cn/search/${cleanCode}`;
         return `https://www.javbus.com/search/${cleanCode}`;
+    }
+
+    function resolvePosterUrl(rawUrl, pageUrl) {
+        let s = String(rawUrl || '').trim();
+        if (!s || /^javascript:/i.test(s) || /^data:/i.test(s)) return '';
+        if (/(?:^|\/)(?:logo|avatar|none\.gif|blank\.gif|default_avatar|noposter)\b/i.test(s)) return '';
+        if (s.startsWith('//')) s = 'https:' + s;
+        if (!/^https?:\/\//i.test(s) && pageUrl) {
+            try {
+                s = new URL(s, pageUrl).href;
+            } catch (e) {
+                return '';
+            }
+        }
+        return sanitizeHttpUrl(s);
+    }
+
+    function normalizeSearchCodeForSite(code) {
+        const raw = String(code || '').trim().toUpperCase();
+        if (!raw) return { queryCode: '', isUncensored: false, isFc2: false };
+        if (raw.startsWith('FC2-PPV-')) {
+            return { queryCode: raw, isUncensored: true, isFc2: true };
+        }
+        if (raw.startsWith('CARIB-')) {
+            return { queryCode: raw.slice('CARIB-'.length), isUncensored: true, isFc2: false };
+        }
+        if (raw.startsWith('1PONDO-')) {
+            return { queryCode: raw.slice('1PONDO-'.length).replace(/-/g, '_'), isUncensored: true, isFc2: false };
+        }
+        if (raw.startsWith('HEYZO-')) {
+            return { queryCode: raw, isUncensored: true, isFc2: false };
+        }
+        if (raw.startsWith('TOKYO-HOT-')) {
+            return { queryCode: raw.slice('TOKYO-HOT-'.length), isUncensored: true, isFc2: false };
+        }
+        return { queryCode: raw, isUncensored: false, isFc2: false };
+    }
+
+    function isMatchingAvCode(candidateText, targetCode) {
+        const target = String(targetCode || '').trim().toUpperCase();
+        const candidate = String(candidateText || '').trim().toUpperCase();
+        if (!target || !candidate) return false;
+        const { queryCode } = normalizeSearchCodeForSite(target);
+        const patterns = new Set([target, queryCode].filter(Boolean));
+        for (const pat of patterns) {
+            const escaped = pat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/[-_]/g, '[-_ ]?');
+            const re = new RegExp(`(?:^|[^A-Z0-9])${escaped}(?:[^A-Z0-9]|$)`, 'i');
+            if (re.test(candidate)) return true;
+        }
+        return false;
+    }
+
+    function isHtmlChallengePage(html) {
+        const raw = String(html || '');
+        if (!raw) return false;
+        return /<title>\s*(?:Just a moment|Attention Required|请稍候|Access denied)/i.test(raw) ||
+            /cf-browser-verification|challenge-platform|__cf_chl_opt/i.test(raw);
+    }
+
+    function decodeBasicHtmlEntities(str) {
+        return String(str || '')
+            .replace(/&amp;/g, '&')
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&nbsp;/gi, ' ')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function parseHtmlAttr(attrStr, attrName) {
+        const m = String(attrStr || '').match(new RegExp(`\\b${attrName}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`, 'i'));
+        return m ? (m[1] !== undefined ? m[1] : m[2]) : '';
+    }
+
+    function parseDomDoc(html) {
+        if (typeof DOMParser === 'undefined' || typeof html !== 'string') return null;
+        try {
+            return new DOMParser().parseFromString(html, 'text/html');
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function parseOgImageFromHtml(html, pageUrl, doc) {
+        if (doc) {
+            const meta = doc.querySelector('meta[property="og:image"], meta[name="twitter:image"]');
+            if (meta) return resolvePosterUrl(meta.getAttribute('content'), pageUrl);
+        }
+        const m = String(html || '').match(/<meta\b[^>]*(?:property=["']og:image["']|name=["']twitter:image["'])[^>]*\bcontent=["']([^"']+)["'][^>]*>/i)
+            || String(html || '').match(/<meta\b[^>]*\bcontent=["']([^"']+)["'][^>]*(?:property=["']og:image["']|name=["']twitter:image["'])[^>]*>/i);
+        return m ? resolvePosterUrl(m[1], pageUrl) : '';
+    }
+
+    function upgradeJavBusCoverUrl(posterUrl) {
+        const url = String(posterUrl || '');
+        if (!url) return '';
+        return url.replace(/\/pics\/thumb\/([^/?#]+)\.(jpg|jpeg|png|webp)$/i, '/pics/cover/$1_b.$2');
+    }
+
+    function parseJavBusHtml(html, pageUrl, targetCode) {
+        if (isHtmlChallengePage(html)) return { kind: 'blocked' };
+        const raw = String(html || '');
+        const doc = parseDomDoc(raw);
+
+        if (doc) {
+            const bigAnchor = doc.querySelector('a.bigImage');
+            const bigImg = doc.querySelector('.bigImage img, img.bigImage');
+            const rawHref = bigAnchor ? bigAnchor.getAttribute('href') : '';
+            const rawImg = bigImg ? (bigImg.getAttribute('src') || bigImg.getAttribute('data-src')) : '';
+            const posterUrl = upgradeJavBusCoverUrl(resolvePosterUrl(rawHref || rawImg, pageUrl));
+            if (posterUrl) {
+                const title = (doc.querySelector('h3')?.textContent || '').trim();
+                const stars = Array.from(doc.querySelectorAll('.star-name a')).map(a => a.textContent.trim()).filter(Boolean).slice(0, 4);
+                let date = '';
+                doc.querySelectorAll('.info p').forEach(p => {
+                    const txt = p.textContent || '';
+                    if (/發行日期|发行日期/.test(txt)) {
+                        const dm = txt.match(/\d{4}-\d{2}-\d{2}/);
+                        if (dm) date = dm[0];
+                    }
+                });
+                return { kind: 'detail', source: 'JavBus', posterUrl, pageUrl, title, date, actors: stars };
+            }
+
+            const boxes = doc.querySelectorAll('a.movie-box');
+            for (const box of boxes) {
+                const dateTexts = Array.from(box.querySelectorAll('date')).map(el => el.textContent.trim());
+                const titleAttr = box.querySelector('img')?.getAttribute('title') || '';
+                const candidate = [...dateTexts, titleAttr, box.textContent || ''].join(' ');
+                if (isMatchingAvCode(candidate, targetCode)) {
+                    const detailUrl = resolvePosterUrl(box.getAttribute('href'), pageUrl);
+                    const thumbSrc = resolvePosterUrl(box.querySelector('img')?.getAttribute('src'), pageUrl);
+                    if (detailUrl) {
+                        return { kind: 'search_hit', source: 'JavBus', detailUrl, fallbackPosterUrl: upgradeJavBusCoverUrl(thumbSrc) };
+                    }
+                }
+            }
+            return { kind: 'none' };
+        }
+
+        // Pure string fallback (Node tests)
+        const bigAnchorMatch = raw.match(/<a\b([^>]*\bclass=["'][^"']*bigImage[^"']*["'][^>]*)>([\s\S]*?)<\/a>/i);
+        if (bigAnchorMatch) {
+            const href = parseHtmlAttr(bigAnchorMatch[1], 'href');
+            const innerImg = bigAnchorMatch[2].match(/<img\b([^>]*)>/i);
+            const imgSrc = innerImg ? (parseHtmlAttr(innerImg[1], 'src') || parseHtmlAttr(innerImg[1], 'data-src')) : '';
+            const posterUrl = upgradeJavBusCoverUrl(resolvePosterUrl(href || imgSrc, pageUrl));
+            if (posterUrl) {
+                const h3 = raw.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i);
+                const dateM = raw.match(/(?:發行日期|发行日期)[^0-9]{0,30}(\d{4}-\d{2}-\d{2})/i);
+                return {
+                    kind: 'detail', source: 'JavBus', posterUrl, pageUrl,
+                    title: h3 ? decodeBasicHtmlEntities(h3[1]) : '',
+                    date: dateM ? dateM[1] : '',
+                    actors: []
+                };
+            }
+        }
+
+        const boxRe = /<a\b([^>]*\bclass=["'][^"']*movie-box[^"']*["'][^>]*)>([\s\S]*?)<\/a>/gi;
+        let m;
+        while ((m = boxRe.exec(raw)) !== null) {
+            const boxHref = parseHtmlAttr(m[1], 'href');
+            const body = decodeBasicHtmlEntities(m[2]);
+            if (isMatchingAvCode(body, targetCode)) {
+                const detailUrl = resolvePosterUrl(boxHref, pageUrl);
+                const thumbM = m[2].match(/<img\b([^>]*)>/i);
+                const thumbSrc = thumbM ? resolvePosterUrl(parseHtmlAttr(thumbM[1], 'src'), pageUrl) : '';
+                if (detailUrl) {
+                    return { kind: 'search_hit', source: 'JavBus', detailUrl, fallbackPosterUrl: upgradeJavBusCoverUrl(thumbSrc) };
+                }
+            }
+        }
+        return { kind: 'none' };
+    }
+
+    function upgradeJavDbCoverUrl(posterUrl) {
+        const url = String(posterUrl || '');
+        if (!url) return '';
+        return url.replace(/\/thumbs\//i, '/covers/');
+    }
+
+    function parseJavDbHtml(html, pageUrl, targetCode) {
+        if (isHtmlChallengePage(html)) return { kind: 'blocked' };
+        const raw = String(html || '');
+        const doc = parseDomDoc(raw);
+
+        if (doc) {
+            const coverImg = doc.querySelector('img.video-cover, .cover-container img');
+            const coverSrc = coverImg ? (coverImg.getAttribute('src') || coverImg.getAttribute('data-src')) : '';
+            const isDetailUrl = /\/v\/[A-Za-z0-9]+/i.test(String(pageUrl || ''));
+            const rawPoster = coverSrc || (isDetailUrl ? parseOgImageFromHtml(raw, pageUrl, doc) : '');
+            const posterUrl = upgradeJavDbCoverUrl(resolvePosterUrl(rawPoster, pageUrl));
+            if (posterUrl) {
+                const title = (doc.querySelector('.current-title, h2.title strong')?.textContent || '').trim();
+                const dateText = (doc.querySelector('.movie-panel-info')?.textContent || '').match(/\d{4}-\d{2}-\d{2}/);
+                return {
+                    kind: 'detail', source: 'JavDB', posterUrl, pageUrl, title,
+                    date: dateText ? dateText[0] : '', actors: []
+                };
+            }
+
+            const items = doc.querySelectorAll('.movie-list .item a.box');
+            for (const box of items) {
+                const vTitle = box.querySelector('.video-title')?.textContent || '';
+                const candidate = `${vTitle} ${box.getAttribute('title') || ''}`;
+                if (isMatchingAvCode(candidate, targetCode)) {
+                    const detailUrl = resolvePosterUrl(box.getAttribute('href'), pageUrl);
+                    const imgEl = box.querySelector('img');
+                    const thumbSrc = resolvePosterUrl(imgEl?.getAttribute('src') || imgEl?.getAttribute('data-src'), pageUrl);
+                    if (detailUrl) {
+                        return { kind: 'search_hit', source: 'JavDB', detailUrl, fallbackPosterUrl: upgradeJavDbCoverUrl(thumbSrc) };
+                    }
+                }
+            }
+            return { kind: 'none' };
+        }
+
+        const coverM = raw.match(/<img\b([^>]*\bclass=["'][^"']*video-cover[^"']*["'][^>]*)>/i);
+        if (coverM) {
+            const src = parseHtmlAttr(coverM[1], 'src') || parseHtmlAttr(coverM[1], 'data-src');
+            const posterUrl = upgradeJavDbCoverUrl(resolvePosterUrl(src, pageUrl));
+            if (posterUrl) {
+                const titleM = raw.match(/<strong[^>]*class=["'][^"']*current-title[^"']*["'][^>]*>([\s\S]*?)<\/strong>/i);
+                const dateM = raw.match(/\d{4}-\d{2}-\d{2}/);
+                return {
+                    kind: 'detail', source: 'JavDB', posterUrl, pageUrl,
+                    title: titleM ? decodeBasicHtmlEntities(titleM[1]) : '',
+                    date: dateM ? dateM[0] : '', actors: []
+                };
+            }
+        }
+
+        const boxRe = /<a\b([^>]*\bclass=["'][^"']*\bbox\b[^"']*["'][^>]*)>([\s\S]*?)<\/a>/gi;
+        let m;
+        while ((m = boxRe.exec(raw)) !== null) {
+            const boxHref = parseHtmlAttr(m[1], 'href');
+            if (!/\/v\//i.test(boxHref)) continue;
+            const titleText = decodeBasicHtmlEntities(m[2]) + ' ' + parseHtmlAttr(m[1], 'title');
+            if (isMatchingAvCode(titleText, targetCode)) {
+                const detailUrl = resolvePosterUrl(boxHref, pageUrl);
+                const imgM = m[2].match(/<img\b([^>]*)>/i);
+                const thumbSrc = imgM ? resolvePosterUrl(parseHtmlAttr(imgM[1], 'src') || parseHtmlAttr(imgM[1], 'data-src'), pageUrl) : '';
+                if (detailUrl) {
+                    return { kind: 'search_hit', source: 'JavDB', detailUrl, fallbackPosterUrl: upgradeJavDbCoverUrl(thumbSrc) };
+                }
+            }
+        }
+        return { kind: 'none' };
+    }
+
+    function parseAvsoxHtml(html, pageUrl, targetCode) {
+        const res = parseJavBusHtml(html, pageUrl, targetCode);
+        if (res.kind === 'detail' || res.kind === 'search_hit') {
+            return { ...res, source: 'AVSOX' };
+        }
+        return res;
+    }
+
+    function buildPosterFetchPlan(code, preferredSite = 'javbus') {
+        const { queryCode, isUncensored, isFc2 } = normalizeSearchCodeForSite(code);
+        if (!queryCode) return [];
+        const enc = encodeURIComponent(queryCode);
+        const encOrig = encodeURIComponent(String(code || '').trim().toUpperCase());
+
+        const siteBuilders = {
+            javbus: () => {
+                if (isFc2) return [];
+                const steps = [{ site: 'javbus', kind: 'detail', url: `https://www.javbus.com/${enc}` }];
+                if (isUncensored) {
+                    steps.push({ site: 'javbus', kind: 'search', url: `https://www.javbus.com/uncensored/search/${enc}` });
+                } else {
+                    steps.push({ site: 'javbus', kind: 'search', url: `https://www.javbus.com/search/${enc}` });
+                }
+                return steps;
+            },
+            javdb: () => [{ site: 'javdb', kind: 'search', url: `https://javdb.com/search?q=${encOrig}&f=all` }],
+            avsox: () => [{ site: 'avsox', kind: 'search', url: `https://avsox.click/cn/search/${enc}` }]
+        };
+
+        let order;
+        if (isFc2) {
+            order = preferredSite === 'avsox' ? ['avsox', 'javdb'] : ['javdb', 'avsox'];
+        } else {
+            const allSites = ['javbus', 'javdb', 'avsox'];
+            const first = allSites.includes(preferredSite) ? preferredSite : 'javbus';
+            order = [first, ...allSites.filter(s => s !== first)];
+        }
+
+        const plan = [];
+        for (const site of order) {
+            plan.push(...siteBuilders[site]());
+        }
+        return plan;
     }
 
     function compareCodeLibrary(inputText, allGroupsMap, options = {}) {
@@ -889,21 +1599,88 @@
                 --av-text-soft: #94a3b8;
                 --av-hover: #f8fafc;
                 --av-input-bg: #ffffff;
+                --av-indigo-bg: #eef2ff;
+                --av-indigo-fg: #4338ca;
+                --av-indigo-border: #c7d2fe;
+                --av-sky-bg: #e0f2fe;
+                --av-sky-fg: #0284c7;
+                --av-sky-border: #bae6fd;
+                --av-blue-bg: #eff6ff;
+                --av-blue-fg: #2563eb;
+                --av-blue-border: #93c5fd;
+                --av-tab-badge-active-bg: #dbeafe;
+                --av-tab-badge-active-fg: #2563eb;
+                --av-green-bg: #ecfdf5;
+                --av-green-fg: #059669;
+                --av-green-border: #a7f3d0;
+                --av-sub-bg: #dcfce7;
+                --av-sub-fg: #15803d;
+                --av-sub-border: #bbf7d0;
+                --av-rose-bg: #fff1f2;
+                --av-rose-fg: #e11d48;
+                --av-rose-border: #fecdd3;
+                --av-amber-bg: #fffbeb;
+                --av-amber-fg: #92400e;
+                --av-amber-border: #fde68a;
+                --av-purple-bg: #f3e8ff;
+                --av-purple-fg: #6f42c1;
+                --av-orange-bg: #ffedd5;
+                --av-orange-fg: #c2410c;
             }
             [data-av-theme="dark"] {
-                --av-bg: #0f172a;
-                --av-surface: #1e293b;
-                --av-surface-2: #334155;
-                --av-border: #334155;
-                --av-border-dashed: #1e293b;
-                --av-text: #f1f5f9;
+                color-scheme: dark;
+                --av-bg: #111827;
+                --av-surface: #161f30;
+                --av-surface-2: #222e44;
+                --av-border: rgba(148, 163, 184, 0.16);
+                --av-border-dashed: rgba(148, 163, 184, 0.10);
+                --av-text: #e2e8f0;
                 --av-text-secondary: #cbd5e1;
                 --av-text-muted: #94a3b8;
-                --av-text-soft: #64748b;
-                --av-hover: #1e293b;
-                --av-input-bg: #0f172a;
+                --av-text-soft: #8a9bb3;
+                --av-hover: rgba(51, 65, 85, 0.42);
+                --av-input-bg: #0d1320;
+                --av-indigo-bg: rgba(99, 102, 241, 0.16);
+                --av-indigo-fg: #a5b4fc;
+                --av-indigo-border: rgba(129, 140, 248, 0.30);
+                --av-sky-bg: rgba(14, 165, 233, 0.16);
+                --av-sky-fg: #38bdf8;
+                --av-sky-border: rgba(56, 189, 248, 0.28);
+                --av-blue-bg: rgba(59, 130, 246, 0.18);
+                --av-blue-fg: #60a5fa;
+                --av-blue-border: rgba(96, 165, 250, 0.38);
+                --av-tab-badge-active-bg: rgba(59, 130, 246, 0.22);
+                --av-tab-badge-active-fg: #60a5fa;
+                --av-green-bg: rgba(16, 185, 129, 0.14);
+                --av-green-fg: #34d399;
+                --av-green-border: rgba(52, 211, 153, 0.28);
+                --av-sub-bg: rgba(34, 197, 94, 0.15);
+                --av-sub-fg: #4ade80;
+                --av-sub-border: rgba(74, 222, 128, 0.28);
+                --av-rose-bg: rgba(244, 63, 94, 0.15);
+                --av-rose-fg: #fb7185;
+                --av-rose-border: rgba(251, 113, 133, 0.30);
+                --av-amber-bg: rgba(245, 158, 11, 0.15);
+                --av-amber-fg: #fbbf24;
+                --av-amber-border: rgba(251, 191, 36, 0.28);
+                --av-purple-bg: rgba(168, 85, 247, 0.16);
+                --av-purple-fg: #c084fc;
+                --av-orange-bg: rgba(249, 115, 22, 0.16);
+                --av-orange-fg: #fb923c;
             }
             @keyframes spin { to { transform: rotate(360deg); } }
+            [data-av-theme="dark"] #av-dedup-modal,
+            [data-av-theme="dark"] .av-modal-surface,
+            [data-av-theme="dark"] #av-thumb-tooltip { color-scheme: dark; }
+            [data-av-theme="dark"] #av-dedup-modal input[type="checkbox"] { accent-color: #3b82f6; }
+            [data-av-theme="dark"] #av-dedup-modal ::-webkit-scrollbar,
+            [data-av-theme="dark"] .av-modal-surface ::-webkit-scrollbar { width: 8px; height: 8px; }
+            [data-av-theme="dark"] #av-dedup-modal ::-webkit-scrollbar-track,
+            [data-av-theme="dark"] .av-modal-surface ::-webkit-scrollbar-track { background: transparent; }
+            [data-av-theme="dark"] #av-dedup-modal ::-webkit-scrollbar-thumb,
+            [data-av-theme="dark"] .av-modal-surface ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.24); border-radius: 999px; }
+            [data-av-theme="dark"] #av-dedup-modal ::-webkit-scrollbar-thumb:hover,
+            [data-av-theme="dark"] .av-modal-surface ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.40); }
             .av-ad-prefix { color: var(--av-text-soft); font-weight: 400; font-size: 12px; }
             .av-file-main { color: var(--av-text); font-weight: 500; }
             .file-row { transition: background 0.15s ease; cursor: pointer; }
@@ -911,19 +1688,20 @@
             .file-row .row-hover-actions { opacity: 0.72; transition: opacity 0.15s ease; }
             .file-row:hover .row-hover-actions { opacity: 1 !important; }
             .file-row .row-open-dir { opacity: 0; visibility: hidden; transition: all 0.15s ease; }
-            .file-row:hover .row-open-dir { opacity: 1 !important; visibility: visible !important; color: #0284c7 !important; background: rgba(2,132,199,0.12) !important; border-color: rgba(2,132,199,0.35) !important; }
+            .file-row:hover .row-open-dir { opacity: 1 !important; visibility: visible !important; color: var(--av-sky-fg) !important; background: var(--av-sky-bg) !important; border-color: var(--av-sky-border) !important; }
             .nav-tab { transition: all 0.15s ease; border-bottom: 2px solid transparent; }
             .nav-tab:hover { color: #3b82f6 !important; }
             .tab-badge { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 10px; background: var(--av-surface-2); color: var(--av-text-soft); font-variant-numeric: tabular-nums; line-height: 1.4; }
-            .tab-badge.active { background: #dbeafe !important; color: #2563eb !important; }
-            .tab-badge.has-num:not(.active) { background: var(--av-border); color: var(--av-text-secondary); }
+            .tab-badge.active { background: var(--av-tab-badge-active-bg) !important; color: var(--av-tab-badge-active-fg) !important; }
+            .tab-badge.has-num:not(.active) { background: var(--av-surface-2); color: var(--av-text-secondary); }
             .tool-btn { transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0; }
-            .tool-btn:not(:disabled):hover { filter: brightness(0.96); }
+            .tool-btn:disabled { opacity: 0.45 !important; cursor: not-allowed !important; }
+            .tool-btn:not(:disabled):hover { filter: brightness(1.06); }
             .header-icon-btn { display:inline-flex; align-items:center; gap:5px; padding:5px 10px; border-radius:6px; border:1px solid var(--av-border); background:var(--av-bg); color:var(--av-text-secondary); font-size:12px; font-weight:500; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
             .header-icon-btn:hover { background:var(--av-surface-2); color:var(--av-text); }
             .filter-pill { padding:3px 10px; border-radius:999px; font-size:11px; font-weight:600; cursor:pointer; border:1px solid var(--av-border); background:var(--av-bg); color:var(--av-text-muted); transition:all 0.15s; white-space:nowrap; }
-            .filter-pill:hover { color:var(--av-text); }
-            .filter-pill.active { background:#eff6ff; color:#2563eb; border-color:#93c5fd; }
+            .filter-pill:hover { color:var(--av-text); background:var(--av-surface-2); }
+            .filter-pill.active { background:var(--av-blue-bg); color:var(--av-blue-fg); border-color:var(--av-blue-border); }
             .av-modal-surface { background: var(--av-bg); color: var(--av-text); }
             .av-subsurface { background: var(--av-surface); border-color: var(--av-border); }
             .av-input { background: var(--av-input-bg); color: var(--av-text); border: 1px solid var(--av-border); }
@@ -947,11 +1725,11 @@
                 fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
             });
 
-            let iconSvg = ICONS.alert, iconColor = '#f59e0b', iconBg = '#fef3c7';
-            if (iconType === 'edit') { iconSvg = ICONS.edit; iconColor = '#4f46e5'; iconBg = '#eef2ff'; }
-            else if (iconType === 'folderPlus') { iconSvg = ICONS.folderPlus; iconColor = '#0284c7'; iconBg = '#e0f2fe'; }
-            else if (iconType === 'trash' || isDanger) { iconSvg = ICONS.trash; iconColor = '#e11d48'; iconBg = '#ffe4e6'; }
-            else if (iconType === 'info') { iconSvg = ICONS.info; iconColor = '#0284c7'; iconBg = '#e0f2fe'; }
+            let iconSvg = ICONS.alert, iconColor = 'var(--av-amber-fg)', iconBg = 'var(--av-amber-bg)';
+            if (iconType === 'edit') { iconSvg = ICONS.edit; iconColor = 'var(--av-indigo-fg)'; iconBg = 'var(--av-indigo-bg)'; }
+            else if (iconType === 'folderPlus') { iconSvg = ICONS.folderPlus; iconColor = 'var(--av-sky-fg)'; iconBg = 'var(--av-sky-bg)'; }
+            else if (iconType === 'trash' || isDanger) { iconSvg = ICONS.trash; iconColor = 'var(--av-rose-fg)'; iconBg = 'var(--av-rose-bg)'; }
+            else if (iconType === 'info') { iconSvg = ICONS.info; iconColor = 'var(--av-sky-fg)'; iconBg = 'var(--av-sky-bg)'; }
 
             let bodyHtml = '';
             if (type === 'preview-rename') {
@@ -962,8 +1740,8 @@
                             <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;" title="${escapeHtml(item.oldName)}">${escapeHtml(item.oldName)}</span>
                         </div>
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="color:#6366f1; display:flex; align-items:center;">${ICONS.arrowRight}</span>
-                            <span style="background:${item.isSub ? '#dcfce7' : '#eef2ff'}; color:${item.isSub ? '#15803d' : '#4338ca'}; border:1px solid ${item.isSub ? '#bbf7d0' : '#c7d2fe'}; font-family:ui-monospace, monospace; font-size:12px; font-weight:600; padding:2px 8px; border-radius:4px;">${escapeHtml(item.newName)}</span>
+                            <span style="color:var(--av-indigo-fg); display:flex; align-items:center;">${ICONS.arrowRight}</span>
+                            <span style="background:${item.isSub ? 'var(--av-sub-bg)' : 'var(--av-indigo-bg)'}; color:${item.isSub ? 'var(--av-sub-fg)' : 'var(--av-indigo-fg)'}; border:1px solid ${item.isSub ? 'var(--av-sub-border)' : 'var(--av-indigo-border)'}; font-family:ui-monospace, monospace; font-size:12px; font-weight:600; padding:2px 8px; border-radius:4px;">${escapeHtml(item.newName)}</span>
                         </div>
                     </div>
                 `).join('');
@@ -971,12 +1749,12 @@
                 const moreText = totalCount > items.length
                     ? `<div style="text-align:center; color:var(--av-text-soft); font-size:12px; padding:6px 0;">... 以及另外 <b>${totalCount - items.length}</b> 个项目</div>` : '';
                 const conflictWarn = conflictCount > 0
-                    ? `<div style="background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:8px 12px; font-size:12px; color:#92400e; margin-top:8px; display:flex; align-items:center; gap:6px;">${ICONS.alert} <span>已安全跳过 <b>${conflictCount}</b> 个同目录重名冲突文件（建议先在「重复番号」去重）。</span></div>` : '';
+                    ? `<div style="background:var(--av-amber-bg); border:1px solid var(--av-amber-border); border-radius:6px; padding:8px 12px; font-size:12px; color:var(--av-amber-fg); margin-top:8px; display:flex; align-items:center; gap:6px;">${ICONS.alert} <span>已安全跳过 <b>${conflictCount}</b> 个同目录重名冲突文件（建议先在「重复番号」去重）。</span></div>` : '';
                 const subNotice = pairedSubCount > 0
-                    ? `<div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:8px 12px; font-size:12px; color:#15803d; margin-top:8px; display:flex; align-items:center; gap:6px;">${ICONS.subtitle} <span>已识别 <b>${pairedSubCount}</b> 个同目录外挂字幕文件，将同步跟进重命名！</span></div>` : '';
+                    ? `<div style="background:var(--av-sub-bg); border:1px solid var(--av-sub-border); border-radius:6px; padding:8px 12px; font-size:12px; color:var(--av-sub-fg); margin-top:8px; display:flex; align-items:center; gap:6px;">${ICONS.subtitle} <span>已识别 <b>${pairedSubCount}</b> 个同目录外挂字幕文件，将同步跟进重命名！</span></div>` : '';
 
                 bodyHtml = `
-                    <div style="margin-bottom:12px; font-size:13px; color:var(--av-text-secondary);">共准备重命名 <b style="color:#4f46e5; font-size:15px;">${totalCount}</b> 个项目：</div>
+                    <div style="margin-bottom:12px; font-size:13px; color:var(--av-text-secondary);">共准备重命名 <b style="color:var(--av-indigo-fg); font-size:15px;">${totalCount}</b> 个项目：</div>
                     <div style="max-height:240px; overflow-y:auto; padding-right:4px;">${previewItemsHtml}${moreText}</div>
                     ${subNotice}${conflictWarn}
                     <div style="background:var(--av-surface-2); border:1px solid var(--av-border); border-radius:6px; padding:8px 12px; font-size:11px; color:var(--av-text-muted); margin-top:10px; display:flex; align-items:center; gap:6px;">
@@ -1042,7 +1820,7 @@
         overlay.innerHTML = `
             <div class="av-modal-surface" style="width:440px; max-width:92vw; border-radius:14px; border:1px solid var(--av-border); box-shadow:0 24px 48px rgba(0,0,0,0.28); padding:24px;">
                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
-                    <div style="display:inline-block; width:20px; height:20px; border:2.5px solid #e0e7ff; border-top-color:#4f46e5; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+                    <div style="display:inline-block; width:20px; height:20px; border:2.5px solid var(--av-indigo-border); border-top-color:var(--av-indigo-fg); border-radius:50%; animation:spin 0.8s linear infinite;"></div>
                     <h3 style="margin:0; font-size:15px; font-weight:700;">${escapeHtml(title)}</h3>
                 </div>
                 <div id="batch-progress-detail" style="font-size:12px; color:var(--av-text-muted); margin-bottom:10px;">正在准备提交请求...</div>
@@ -1051,7 +1829,7 @@
                 </div>
                 <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--av-text-secondary);">
                     <span id="batch-progress-count" style="font-variant-numeric:tabular-nums; font-weight:600;">0 / 0</span>
-                    <button id="batch-progress-stop" style="background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; padding:5px 14px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; display:flex; align-items:center; gap:5px;">
+                    <button id="batch-progress-stop" style="background:var(--av-rose-bg); color:var(--av-rose-fg); border:1px solid var(--av-rose-border); padding:5px 14px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; display:flex; align-items:center; gap:5px;">
                         ${ICONS.stop} 停止继续
                     </button>
                 </div>
@@ -1434,11 +2212,15 @@
         if (enabled) {
             btn.style.background = isDanger ? '#e11d48' : '#4f46e5';
             btn.style.color = '#fff';
+            btn.style.border = '1px solid transparent';
+            btn.style.opacity = '1';
             btn.style.cursor = 'pointer';
             btn.style.boxShadow = isDanger ? '0 4px 12px rgba(225,29,72,0.25)' : '0 4px 12px rgba(79,70,229,0.25)';
         } else {
             btn.style.background = 'var(--av-surface-2)';
-            btn.style.color = 'var(--av-text-soft)';
+            btn.style.color = 'var(--av-text-muted)';
+            btn.style.border = '1px solid var(--av-border)';
+            btn.style.opacity = '0.72';
             btn.style.cursor = 'not-allowed';
             btn.style.boxShadow = 'none';
         }
@@ -1498,14 +2280,215 @@
         return closeWithCleanup;
     }
 
-    // ==================== 缩略图悬浮预览 ====================
+    // ==================== 高清海报自动检索与缩略图悬浮预览 ====================
+    const posterMemoryCache = new Map();
+    const posterNegativeCache = new Map();
+    const posterInflight = new Map();
+    const POSTER_CACHE_LIMIT = 80;
+    const POSTER_NEGATIVE_TTL_MS = 5 * 60 * 1000;
+
+    function setPosterMemoryCache(code, entry) {
+        if (!code || !entry) return;
+        if (posterMemoryCache.has(code)) posterMemoryCache.delete(code);
+        posterMemoryCache.set(code, entry);
+        if (posterMemoryCache.size > POSTER_CACHE_LIMIT) {
+            const oldestKey = posterMemoryCache.keys().next().value;
+            const oldest = posterMemoryCache.get(oldestKey);
+            posterMemoryCache.delete(oldestKey);
+            if (oldest && oldest.blobUrl && typeof URL !== 'undefined' && URL.revokeObjectURL) {
+                try { URL.revokeObjectURL(oldest.blobUrl); } catch (e) {}
+            }
+        }
+    }
+
+    function clearHdPosterCaches() {
+        posterMemoryCache.forEach(entry => {
+            if (entry && entry.blobUrl && typeof URL !== 'undefined' && URL.revokeObjectURL) {
+                try { URL.revokeObjectURL(entry.blobUrl); } catch (e) {}
+            }
+        });
+        posterMemoryCache.clear();
+        posterNegativeCache.clear();
+    }
+
+    function gmFetchText(url, refererUrl, timeoutMs = 8000) {
+        return new Promise((resolve) => {
+            if (typeof GM_xmlhttpRequest !== 'function' || !url) return resolve(null);
+            try {
+                GM_xmlhttpRequest({
+                    method: 'GET',
+                    url,
+                    headers: {
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+                        ...(refererUrl ? { 'Referer': refererUrl } : {})
+                    },
+                    timeout: timeoutMs,
+                    onload: (res) => {
+                        if (res.status >= 200 && res.status < 400 && res.responseText) {
+                            resolve({ html: res.responseText, finalUrl: res.finalUrl || url });
+                        } else {
+                            resolve(null);
+                        }
+                    },
+                    onerror: () => resolve(null),
+                    ontimeout: () => resolve(null)
+                });
+            } catch (e) {
+                resolve(null);
+            }
+        });
+    }
+
+    function gmFetchImageBlobUrl(imageUrl, refererUrl, timeoutMs = 10000) {
+        return new Promise((resolve) => {
+            if (typeof GM_xmlhttpRequest !== 'function' || !imageUrl) return resolve('');
+            try {
+                GM_xmlhttpRequest({
+                    method: 'GET',
+                    url: imageUrl,
+                    responseType: 'blob',
+                    headers: {
+                        'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+                        ...(refererUrl ? { 'Referer': refererUrl } : {})
+                    },
+                    timeout: timeoutMs,
+                    onload: (res) => {
+                        const blob = res.response;
+                        if (
+                            res.status >= 200 && res.status < 300 &&
+                            blob && blob.size > 2048 &&
+                            !String(blob.type || '').toLowerCase().includes('text/') &&
+                            typeof URL !== 'undefined' && URL.createObjectURL
+                        ) {
+                            resolve(URL.createObjectURL(blob));
+                        } else {
+                            resolve('');
+                        }
+                    },
+                    onerror: () => resolve(''),
+                    ontimeout: () => resolve('')
+                });
+            } catch (e) {
+                resolve('');
+            }
+        });
+    }
+
+    function parseSiteHtmlByName(site, html, pageUrl, code) {
+        if (site === 'javdb') return parseJavDbHtml(html, pageUrl, code);
+        if (site === 'avsox') return parseAvsoxHtml(html, pageUrl, code);
+        return parseJavBusHtml(html, pageUrl, code);
+    }
+
+    async function tryHydratePosterResult(detail) {
+        if (!detail || !detail.posterUrl) return null;
+        const blobUrl = await gmFetchImageBlobUrl(detail.posterUrl, detail.pageUrl);
+        if (!blobUrl && typeof GM_xmlhttpRequest === 'function') return null;
+        return { ...detail, blobUrl: blobUrl || '' };
+    }
+
+    async function getHdPosterForCode(code, settings = {}) {
+        const cleanCode = String(code || '').trim().toUpperCase();
+        if (!cleanCode) return null;
+        if (posterMemoryCache.has(cleanCode)) return posterMemoryCache.get(cleanCode);
+
+        const negTs = posterNegativeCache.get(cleanCode);
+        if (negTs && (Date.now() - negTs < POSTER_NEGATIVE_TTL_MS)) return null;
+
+        if (posterInflight.has(cleanCode)) return posterInflight.get(cleanCode);
+
+        const task = (async () => {
+            try {
+                // 1. 读取 IndexedDB 持久化的海报元数据（免重复抓取 HTML）
+                if (settings.enableCache !== false) {
+                    const cachedMeta = await CacheManager.get(`poster_meta:${cleanCode}`, 60 * 24 * 7);
+                    if (cachedMeta && cachedMeta.posterUrl) {
+                        const hydrated = await tryHydratePosterResult(cachedMeta);
+                        if (hydrated) {
+                            setPosterMemoryCache(cleanCode, hydrated);
+                            return hydrated;
+                        }
+                    }
+                }
+
+                // 2. 按优先级策略依次自动检索高清封面
+                const plan = buildPosterFetchPlan(cleanCode, settings.preferredSearchSite || 'javbus');
+                const blockedSites = new Set();
+
+                for (const step of plan) {
+                    if (blockedSites.has(step.site)) continue;
+                    const page = await gmFetchText(step.url);
+                    if (!page) continue;
+
+                    const parsed = parseSiteHtmlByName(step.site, page.html, page.finalUrl || step.url, cleanCode);
+                    if (parsed.kind === 'blocked') {
+                        blockedSites.add(step.site);
+                        continue;
+                    }
+
+                    let candidate = null;
+                    if (parsed.kind === 'detail') {
+                        candidate = parsed;
+                    } else if (parsed.kind === 'search_hit') {
+                        const detailPage = await gmFetchText(parsed.detailUrl, page.finalUrl || step.url);
+                        if (detailPage) {
+                            const detailParsed = parseSiteHtmlByName(step.site, detailPage.html, detailPage.finalUrl || parsed.detailUrl, cleanCode);
+                            if (detailParsed.kind === 'detail') {
+                                candidate = detailParsed;
+                            }
+                        }
+                        if (!candidate && parsed.fallbackPosterUrl) {
+                            candidate = {
+                                kind: 'detail',
+                                source: parsed.source,
+                                posterUrl: parsed.fallbackPosterUrl,
+                                pageUrl: parsed.detailUrl,
+                                title: '',
+                                date: '',
+                                actors: []
+                            };
+                        }
+                    }
+
+                    if (candidate && candidate.posterUrl) {
+                        const hydrated = await tryHydratePosterResult(candidate);
+                        if (hydrated) {
+                            const metaToSave = {
+                                posterUrl: hydrated.posterUrl,
+                                pageUrl: hydrated.pageUrl || '',
+                                source: hydrated.source || step.site,
+                                title: hydrated.title || '',
+                                date: hydrated.date || '',
+                                actors: Array.isArray(hydrated.actors) ? hydrated.actors : []
+                            };
+                            setPosterMemoryCache(cleanCode, hydrated);
+                            if (settings.enableCache !== false) {
+                                CacheManager.set(`poster_meta:${cleanCode}`, metaToSave).catch(() => {});
+                            }
+                            return hydrated;
+                        }
+                    }
+                }
+
+                posterNegativeCache.set(cleanCode, Date.now());
+                return null;
+            } finally {
+                posterInflight.delete(cleanCode);
+            }
+        })();
+
+        posterInflight.set(cleanCode, task);
+        return task;
+    }
+
     function ensureThumbTooltip() {
         let tip = document.getElementById('av-thumb-tooltip');
         if (tip) return tip;
         tip = document.createElement('div');
         tip.id = 'av-thumb-tooltip';
         Object.assign(tip.style, {
-            position: 'fixed', zIndex: '250000', width: '260px', borderRadius: '10px',
+            position: 'fixed', zIndex: '250000', width: '300px', borderRadius: '10px',
             boxShadow: '0 16px 40px rgba(15, 23, 42, 0.35)', border: '1px solid var(--av-border)',
             padding: '10px', pointerEvents: 'none', display: 'none',
             fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
@@ -1515,25 +2498,148 @@
         return tip;
     }
 
+    function renderTooltipPosterFrame(tip, { primarySrc, fallbackSrc, badgeText, badgeBg, badgeColor, emptyHtml }) {
+        const frame = tip.querySelector('#av-thumb-frame');
+        if (!frame) return;
+        frame.replaceChildren();
+
+        if (badgeText) {
+            const pill = document.createElement('span');
+            pill.style.cssText = `position:absolute; top:6px; left:6px; z-index:2; padding:2px 7px; border-radius:999px; font-size:10px; font-weight:700; backdrop-filter:blur(4px); background:${badgeBg || 'rgba(15,23,42,0.72)'}; color:${badgeColor || '#ffffff'};`;
+            pill.textContent = badgeText;
+            frame.appendChild(pill);
+        }
+
+        if (primarySrc) {
+            const img = document.createElement('img');
+            img.src = primarySrc;
+            img.referrerPolicy = 'no-referrer';
+            img.style.cssText = 'width:100%; height:100%; object-fit:contain; background:#0f172a;';
+            let triedFallback = false;
+            img.addEventListener('error', () => {
+                if (!triedFallback && fallbackSrc && fallbackSrc !== primarySrc) {
+                    triedFallback = true;
+                    img.src = fallbackSrc;
+                    return;
+                }
+                img.remove();
+                const empty = document.createElement('div');
+                empty.style.cssText = 'display:flex; flex-direction:column; align-items:center; color:var(--av-text-soft); font-size:11px; text-align:center; padding:12px;';
+                empty.innerHTML = emptyHtml || '<span>预览图加载失败</span>';
+                frame.appendChild(empty);
+            });
+            frame.appendChild(img);
+        } else {
+            const empty = document.createElement('div');
+            empty.style.cssText = 'display:flex; flex-direction:column; align-items:center; color:var(--av-text-soft); font-size:11px; text-align:center; padding:12px;';
+            empty.innerHTML = emptyHtml || '<span>暂无预览图</span>';
+            frame.appendChild(empty);
+        }
+    }
+
+    function applyHdMetadataToTooltip(tip, info, thumbUrl, code) {
+        renderTooltipPosterFrame(tip, {
+            primarySrc: info.blobUrl || info.posterUrl,
+            fallbackSrc: info.blobUrl ? (info.posterUrl || thumbUrl) : thumbUrl,
+            badgeText: `HD海报 · ${info.source || '外部'}`,
+            badgeBg: 'rgba(5, 150, 105, 0.88)',
+            badgeColor: '#ffffff',
+            emptyHtml: '<span>高清海报加载受限</span><span style="margin-top:4px;">可点击外链图标直接打开查看</span>'
+        });
+        const extra = tip.querySelector('#av-thumb-extra');
+        if (extra) {
+            const parts = [];
+            if (info.title) parts.push(info.title.replace(new RegExp(`^${code}\\s*`, 'i'), '').trim());
+            const subParts = [];
+            if (info.date) subParts.push(info.date);
+            if (Array.isArray(info.actors) && info.actors.length > 0) subParts.push(info.actors.slice(0, 3).join(' / '));
+            const subLine = subParts.join(' · ');
+            if (parts[0] || subLine) {
+                extra.style.display = 'block';
+                extra.replaceChildren();
+                if (parts[0]) {
+                    const tDiv = document.createElement('div');
+                    tDiv.style.cssText = 'font-size:11px; color:var(--av-text-secondary); overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:1.35; margin-bottom:2px;';
+                    tDiv.textContent = parts[0];
+                    extra.appendChild(tDiv);
+                }
+                if (subLine) {
+                    const sDiv = document.createElement('div');
+                    sDiv.style.cssText = 'font-size:10px; color:#0284c7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;';
+                    sDiv.textContent = subLine;
+                    extra.appendChild(sDiv);
+                }
+            }
+        }
+    }
+
     function showThumbTooltip(e, file) {
         const tip = ensureThumbTooltip();
+        const settings = getSettings();
+        const posterMode = settings.posterPriority || 'hd_first';
         const thumbUrl = sanitizeHttpUrl(file.thumb || '');
+        const code = String(file.parsedCode || '').trim().toUpperCase();
+        tip.dataset.activeFid = String(file.fid || '');
+        tip.dataset.activeCode = code;
+
         tip.innerHTML = `
-            <div class="av-subsurface" style="width:100%; height:146px; border-radius:6px; overflow:hidden; display:flex; align-items:center; justify-content:center; margin-bottom:8px;">
-                ${thumbUrl
-                    ? `<img src="${escapeHtml(thumbUrl)}" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                       <div style="display:none; flex-direction:column; align-items:center; color:var(--av-text-soft); font-size:11px; text-align:center; padding:10px;">
-                           <span>暂无 115 预览缩略图</span><span style="margin-top:4px;">点击外链图标可检索封面</span>
-                       </div>`
-                    : `<div style="display:flex; flex-direction:column; align-items:center; color:var(--av-text-soft); font-size:11px; text-align:center; padding:10px;">
-                           <span>该文件未生成内置预览图</span><span style="margin-top:4px;">点击外链图标检索海报</span>
-                       </div>`}
-            </div>
-            <div style="font-size:12px; font-weight:700; color:var(--av-text); margin-bottom:2px; word-break:break-all;">${escapeHtml(file.parsedCode || file.n)}</div>
-            <div style="font-size:11px; color:var(--av-text-muted); display:flex; justify-content:space-between;">
-                <span>${formatSize(file.s)}</span><span>${escapeHtml(file.relPath || '/')}</span>
+            <div id="av-thumb-frame" class="av-subsurface" style="position:relative; width:100%; height:196px; border-radius:6px; overflow:hidden; display:flex; align-items:center; justify-content:center; margin-bottom:8px;"></div>
+            <div style="font-size:12px; font-weight:700; color:var(--av-text); margin-bottom:3px; word-break:break-all;">${escapeHtml(code || file.n)}</div>
+            <div id="av-thumb-extra" style="display:none; margin-bottom:4px;"></div>
+            <div style="font-size:11px; color:var(--av-text-muted); display:flex; justify-content:space-between; gap:8px;">
+                <span style="flex-shrink:0;">${formatSize(file.s)}</span>
+                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(file.relPath || '/')}</span>
             </div>
         `;
+
+        const shouldAutoFetch = Boolean(code && posterMode !== 'off' && (posterMode === 'hd_first' || !thumbUrl));
+        const cachedHd = shouldAutoFetch ? posterMemoryCache.get(code) : null;
+
+        if (cachedHd) {
+            applyHdMetadataToTooltip(tip, cachedHd, thumbUrl, code);
+        } else if (shouldAutoFetch) {
+            if (thumbUrl) {
+                renderTooltipPosterFrame(tip, {
+                    primarySrc: thumbUrl,
+                    badgeText: '115缩略图 · 检索高清海报中...',
+                    badgeBg: 'rgba(37, 99, 235, 0.85)',
+                    badgeColor: '#ffffff'
+                });
+            } else {
+                renderTooltipPosterFrame(tip, {
+                    primarySrc: '',
+                    emptyHtml: `<div style="width:18px; height:18px; border:2px solid #cbd5e1; border-top-color:#2563eb; border-radius:50%; animation:spin 0.8s linear infinite; margin-bottom:8px;"></div><span>正在自动检索 <b>${escapeHtml(code)}</b> 高清海报...</span>`
+                });
+            }
+
+            getHdPosterForCode(code, settings).then((info) => {
+                const liveTip = document.getElementById('av-thumb-tooltip');
+                if (!liveTip || liveTip.style.display === 'none' || liveTip.dataset.activeFid !== String(file.fid || '')) return;
+                if (info) {
+                    applyHdMetadataToTooltip(liveTip, info, thumbUrl, code);
+                } else if (thumbUrl) {
+                    renderTooltipPosterFrame(liveTip, {
+                        primarySrc: thumbUrl,
+                        badgeText: '115 内置图',
+                        badgeBg: 'rgba(15, 23, 42, 0.72)'
+                    });
+                } else {
+                    renderTooltipPosterFrame(liveTip, {
+                        primarySrc: '',
+                        emptyHtml: `<span>暂未检索到 <b>${escapeHtml(code)}</b> 的高清海报</span><span style="margin-top:4px;">可点击外链图标打开站点查看</span>`
+                    });
+                }
+            });
+        } else {
+            renderTooltipPosterFrame(tip, {
+                primarySrc: thumbUrl,
+                badgeText: thumbUrl ? '115 内置图' : '',
+                emptyHtml: code
+                    ? '<span>该文件未生成内置预览图</span><span style="margin-top:4px;">可在偏好设置开启「自动检索高清海报」</span>'
+                    : '<span>未识别有效番号且无内置预览图</span>'
+            });
+        }
+
         tip.style.display = 'block';
         moveThumbTooltip(e);
     }
@@ -1542,15 +2648,18 @@
         const tip = document.getElementById('av-thumb-tooltip');
         if (!tip || tip.style.display === 'none') return;
         let x = e.clientX + 16, y = e.clientY + 16;
-        if (x + 270 > window.innerWidth) x = e.clientX - 276;
-        if (y + 230 > window.innerHeight) y = Math.max(14, window.innerHeight - 230);
+        if (x + 314 > window.innerWidth) x = Math.max(12, e.clientX - 316);
+        if (y + 300 > window.innerHeight) y = Math.max(12, window.innerHeight - 300);
         tip.style.left = x + 'px';
         tip.style.top = y + 'px';
     }
 
     function hideThumbTooltip() {
         const tip = document.getElementById('av-thumb-tooltip');
-        if (tip) tip.style.display = 'none';
+        if (tip) {
+            tip.style.display = 'none';
+            tip.dataset.activeFid = '';
+        }
     }
 
     // ==================== 主界面初始化与事件绑定 ====================
@@ -1560,7 +2669,7 @@
         if (document.getElementById('av-dedup-launcher')) return;
         const launchBtn = document.createElement('div');
         launchBtn.id = 'av-dedup-launcher';
-        launchBtn.innerHTML = `${ICONS.target}<span style="margin-left:6px;">番号整理助手</span>`;
+        launchBtn.innerHTML = `${createBrandIconSvg(20)}<span style="margin-left:7px;">老司机工作台</span>`;
         Object.assign(launchBtn.style, {
             position: 'fixed', right: '28px', bottom: '88px', zIndex: '99999',
             background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)', color: '#fff',
@@ -1626,13 +2735,13 @@
                 <!-- 1. 顶栏 -->
                 <div style="padding:12px 24px; border-bottom:1px solid var(--av-border); display:flex; justify-content:space-between; align-items:center; gap:12px;">
                     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                        <span style="display:flex; align-items:center; color:#2563eb;">${ICONS.target}</span>
-                        <h2 style="margin:0; font-size:15px; font-weight:700;">115 番号智能整理助手 <span style="font-size:11px; color:#0284c7; background:#e0f2fe; padding:2px 7px; border-radius:4px; font-weight:600;">v${APP_VERSION}</span></h2>
+                        <span style="display:flex; align-items:center;">${createBrandIconSvg(22)}</span>
+                        <h2 style="margin:0; font-size:15px; font-weight:700;">老司机工作台 <span style="font-size:11px; color:var(--av-sky-fg); background:var(--av-sky-bg); border:1px solid var(--av-sky-border); padding:2px 7px; border-radius:4px; font-weight:600;">v${APP_VERSION}</span></h2>
                         <div id="dedup-cid-box" class="av-subsurface" style="display:inline-flex; align-items:center; gap:6px; padding:3px 8px; border-radius:6px; border:1px solid var(--av-border); font-size:12px; color:var(--av-text-muted); font-family:ui-monospace, monospace; cursor:pointer; user-select:none;" title="点击复制当前目录 CID">
                             <span>CID: <span id="dedup-folder-info">-</span></span>
                             <span id="dedup-cid-copy-icon" style="display:inline-flex; align-items:center;">${ICONS.copy}</span>
                         </div>
-                        <span id="dedup-cache-pill" style="display:none; font-size:11px; color:#059669; background:#ecfdf5; border:1px solid #a7f3d0; padding:2px 8px; border-radius:999px; font-weight:600; align-items:center; gap:4px;"></span>
+                        <span id="dedup-cache-pill" style="display:none; font-size:11px; color:var(--av-green-fg); background:var(--av-green-bg); border:1px solid var(--av-green-border); padding:2px 8px; border-radius:999px; font-weight:600; align-items:center; gap:4px;"></span>
                     </div>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <button id="btn-open-export" class="header-icon-btn" title="导出番号库 (TXT/CSV/Markdown) 或查漏比对">${ICONS.download} 导出 / 对比</button>
@@ -1685,15 +2794,15 @@
                     </div>
 
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <button id="btn-batch-rename" class="tool-btn" style="background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; display:flex; align-items:center; gap:5px;" disabled>${ICONS.edit} 批量重命名</button>
-                        <button id="btn-batch-archive" class="tool-btn" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; display:flex; align-items:center; gap:5px;" disabled>${ICONS.folderPlus} 智能归档</button>
+                        <button id="btn-batch-rename" class="tool-btn" style="background:var(--av-indigo-bg); color:var(--av-indigo-fg); border:1px solid var(--av-indigo-border); padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; display:flex; align-items:center; gap:5px;" disabled>${ICONS.edit} 批量重命名</button>
+                        <button id="btn-batch-archive" class="tool-btn" style="background:var(--av-sub-bg); color:var(--av-sub-fg); border:1px solid var(--av-sub-border); padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; display:flex; align-items:center; gap:5px;" disabled>${ICONS.folderPlus} 智能归档</button>
                     </div>
                 </div>
 
                 <!-- 4. 导航选项卡 -->
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--av-border); padding:0 24px;">
                     <div style="display:flex; gap:4px; overflow-x:auto;">
-                        <div id="tab-btn-dups" class="nav-tab" style="padding:9px 14px; cursor:pointer; font-size:13px; font-weight:700; color:#2563eb; border-bottom:2px solid #2563eb; display:flex; align-items:center; gap:6px; white-space:nowrap;">
+                        <div id="tab-btn-dups" class="nav-tab" style="padding:9px 14px; cursor:pointer; font-size:13px; font-weight:700; color:var(--av-blue-fg); border-bottom:2px solid var(--av-blue-fg); display:flex; align-items:center; gap:6px; white-space:nowrap;">
                             ${ICONS.alert} 重复番号 <span id="count-dups" class="tab-badge active">0</span>
                         </div>
                         <div id="tab-btn-sha" class="nav-tab" style="padding:9px 14px; cursor:pointer; font-size:13px; color:var(--av-text-muted); font-weight:500; border-bottom:2px solid transparent; display:flex; align-items:center; gap:6px; white-space:nowrap;">
@@ -1721,7 +2830,7 @@
                         <button class="filter-pill" data-filter="无码">无码</button>
                         <button class="filter-pill" data-filter="needRename">待规范命名</button>
                         <button class="filter-pill" data-filter="hasSub">有外挂字幕</button>
-                        <button class="filter-pill" data-filter="damaged" style="color:#e11d48;" title="识别视频中大小低于 10MB（含 0B）的下载残损伪视频">疑似残损(&lt;10MB)</button>
+                        <button class="filter-pill" data-filter="damaged" style="color:var(--av-rose-fg);" title="识别视频中大小低于 10MB（含 0B）的下载残损伪视频">疑似残损(&lt;10MB)</button>
                     </div>
                     <div style="display:flex; align-items:center; gap:6px;">
                         <select id="sel-sort" class="av-input" style="padding:3px 8px; border-radius:6px; cursor:pointer; font-size:11px; height:26px;">
@@ -1732,7 +2841,7 @@
                             <option value="code-asc">番号: A-Z 升序</option>
                         </select>
                         <span style="border-left:1px solid var(--av-border); height:14px; margin:0 2px;"></span>
-                        <button id="btn-select-smart" class="tool-btn av-input" style="padding:3px 9px; border-radius:6px; cursor:pointer; font-size:11px; font-weight:600; display:flex; align-items:center; gap:4px; height:26px; color:#4f46e5;" title="跨页智能优选：综合体积、4K/中字、已归档路径保留最优版，自动勾选其余重复版本" disabled>${ICONS.sparkle} 智能优选</button>
+                        <button id="btn-select-smart" class="tool-btn av-input" style="padding:3px 9px; border-radius:6px; cursor:pointer; font-size:11px; font-weight:600; display:flex; align-items:center; gap:4px; height:26px; color:var(--av-indigo-fg);" title="跨页智能优选：综合体积、4K/中字、已归档路径保留最优版，自动勾选其余重复版本" disabled>${ICONS.sparkle} 智能优选</button>
                         <button id="btn-select-smaller" class="tool-btn av-input" style="padding:3px 9px; border-radius:6px; cursor:pointer; font-size:11px; font-weight:500; display:flex; align-items:center; gap:4px; height:26px;" title="跨页全局保留体积最大版，勾选其余小副本" disabled>${ICONS.bolt} 保留最大</button>
                         <button id="btn-select-older" class="tool-btn av-input" style="padding:3px 9px; border-radius:6px; cursor:pointer; font-size:11px; font-weight:500; display:flex; align-items:center; gap:4px; height:26px;" title="跨页全局保留最新时间版，勾选其余旧副本" disabled>${ICONS.clock} 保留最新</button>
                         <button id="btn-clear-selection" class="tool-btn av-input" style="padding:3px 9px; border-radius:6px; cursor:pointer; font-size:11px; height:26px;" disabled>取消全选</button>
@@ -1860,6 +2969,11 @@
             const trigger = e.target.closest('.thumb-trigger');
             if (!trigger) return;
             const fid = String(trigger.dataset.fid);
+            const activeTip = document.getElementById('av-thumb-tooltip');
+            if (activeTip && activeTip.style.display !== 'none' && activeTip.dataset.activeFid === fid) {
+                moveThumbTooltip(e);
+                return;
+            }
             const f = allScannedFiles.find(x => String(x.fid) === fid);
             if (f) {
                 const info = parseAvFileInfo(f.n, { customPrefixes: getSettings().customPrefixes, customBlacklist: getSettings().customBlacklist });
@@ -1867,7 +2981,12 @@
             }
         });
         contentBox.addEventListener('mousemove', (e) => { if (e.target.closest('.thumb-trigger')) moveThumbTooltip(e); });
-        contentBox.addEventListener('mouseout', (e) => { if (e.target.closest('.thumb-trigger')) hideThumbTooltip(); });
+        contentBox.addEventListener('mouseout', (e) => {
+            const trigger = e.target.closest('.thumb-trigger');
+            if (trigger && (!e.relatedTarget || !trigger.contains(e.relatedTarget))) {
+                hideThumbTooltip();
+            }
+        });
 
         contentBox.addEventListener('click', (e) => {
             // 1. 警报条继续扫描按钮
@@ -1980,9 +3099,9 @@
             const badge = btn ? btn.querySelector('.tab-badge') : null;
             if (!btn) return;
             const active = (t === tab);
-            btn.style.color = active ? '#2563eb' : 'var(--av-text-muted)';
+            btn.style.color = active ? 'var(--av-blue-fg)' : 'var(--av-text-muted)';
             btn.style.fontWeight = active ? '700' : '500';
-            btn.style.borderBottom = active ? '2px solid #2563eb' : '2px solid transparent';
+            btn.style.borderBottom = active ? '2px solid var(--av-blue-fg)' : '2px solid transparent';
             if (badge) badge.classList.toggle('active', active);
         });
 
@@ -2025,27 +3144,27 @@
         const banners = [];
 
         if (lastScanMeta.isRoot) {
-            banners.push(`<div style="background:#fffbeb; border:1px solid #fde68a; color:#92400e; padding:8px 14px; border-radius:6px; font-size:12px; display:flex; align-items:center; gap:8px;">${ICONS.shield}<span><b>防风控根目录保护生效：</b>处于根目录时已锁定「仅扫描当前一级目录」。建议进入具体子文件夹后再开启递归扫描。</span></div>`);
+            banners.push(`<div style="background:var(--av-amber-bg); border:1px solid var(--av-amber-border); color:var(--av-amber-fg); padding:8px 14px; border-radius:6px; font-size:12px; display:flex; align-items:center; gap:8px;">${ICONS.shield}<span><b>防风控根目录保护生效：</b>处于根目录时已锁定「仅扫描当前一级目录」。建议进入具体子文件夹后再开启递归扫描。</span></div>`);
         }
 
         const remCount = (lastScanMeta.remainingQueue || []).length;
         if (lastScanMeta.isRateLimited) {
             banners.push(`
-                <div style="background:#fff1f2; border:1px solid #fecdd3; color:#be123c; padding:8px 14px; border-radius:6px; font-size:12px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                <div style="background:var(--av-rose-bg); border:1px solid var(--av-rose-border); color:var(--av-rose-fg); padding:8px 14px; border-radius:6px; font-size:12px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
                     <div style="display:flex; align-items:center; gap:8px;">${ICONS.alert}<span><b>115 频控熔断生效：</b>${escapeHtml(lastScanMeta.rateLimitMsg)}。已保留当前 <b>${lastScanMeta.filesCount}</b> 个文件，建议静置 3~5 分钟后点击续扫。</span></div>
                     ${remCount > 0 ? `<button id="btn-continue-scan" style="background:#be123c; color:#fff; border:none; padding:4px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap;">▶ 接力继续 (${remCount} 目录)</button>` : ''}
                 </div>
             `);
         } else if (lastScanMeta.isAborted && remCount > 0) {
             banners.push(`
-                <div style="background:#fffbeb; border:1px solid #fde68a; color:#92400e; padding:8px 14px; border-radius:6px; font-size:12px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                <div style="background:var(--av-amber-bg); border:1px solid var(--av-amber-border); color:var(--av-amber-fg); padding:8px 14px; border-radius:6px; font-size:12px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
                     <div style="display:flex; align-items:center; gap:8px;">${ICONS.alert}<span><b>扫描已主动暂停：</b>已保留 <b>${lastScanMeta.filesCount}</b> 个文件。</span></div>
                     <button id="btn-continue-scan" style="background:#d97706; color:#fff; border:none; padding:4px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap;">▶ 继续扫描剩余 ${remCount} 个目录</button>
                 </div>
             `);
         } else if (lastScanMeta.isFolderLimitReached && remCount > 0) {
             banners.push(`
-                <div style="background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; padding:8px 14px; border-radius:6px; font-size:12px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                <div style="background:var(--av-blue-bg); border:1px solid var(--av-blue-border); color:var(--av-blue-fg); padding:8px 14px; border-radius:6px; font-size:12px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
                     <div style="display:flex; align-items:center; gap:8px;">${ICONS.alert}<span><b>已达单批 150 个子目录安全上限：</b>队列中仍有 <b>${remCount}</b> 个子目录待遍历，可随时分批接力续扫。</span></div>
                     <button id="btn-continue-scan" style="background:#2563eb; color:#fff; border:none; padding:4px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap;">▶ 接力扫下一批 (150目录)</button>
                 </div>
@@ -2091,6 +3210,25 @@
         unparsedFiles = indexes.unparsedFiles;
         subtitleFilesList = indexes.subtitleFiles;
 
+        try {
+            const codeSet = new Set();
+            for (const items of Object.values(allGroups)) {
+                for (const item of items) {
+                    if (item && item.parsedCode) codeSet.add(item.parsedCode);
+                }
+            }
+            const scannedCodes = Array.from(codeSet);
+            const prev = gmGetValue(FORUM_OWNED_CODES_GM_KEY, null);
+            const mergedCodes = (!isRoot && prev && Array.isArray(prev.codes))
+                ? Array.from(new Set([...prev.codes, ...scannedCodes]))
+                : scannedCodes;
+            gmSetValue(FORUM_OWNED_CODES_GM_KEY, {
+                codes: mergedCodes,
+                count: mergedCodes.length,
+                updatedAt: Date.now()
+            });
+        } catch (e) {}
+
         const elTotal = document.getElementById('card-total-files');
         const elRate = document.getElementById('card-recognize-rate');
         const elDups = document.getElementById('card-dup-groups');
@@ -2098,10 +3236,10 @@
         const elEmpty = document.getElementById('card-empty-folders');
 
         if (elTotal) { elTotal.innerText = files.length ? files.length.toLocaleString() : '0'; elTotal.style.color = files.length ? 'var(--av-text)' : 'var(--av-text-soft)'; }
-        if (elRate) { elRate.innerText = indexes.videoCount ? `${((indexes.validVideoCount / indexes.videoCount) * 100).toFixed(1)}%` : '0%'; elRate.style.color = indexes.validVideoCount ? '#0284c7' : 'var(--av-text-soft)'; }
-        if (elDups) { elDups.innerText = `${indexes.dupGroupCount} / ${indexes.shaGroupCount}`; elDups.style.color = (indexes.dupGroupCount + indexes.shaGroupCount) > 0 ? '#e11d48' : 'var(--av-text-soft)'; }
-        if (elRedundant) { elRedundant.innerText = formatSize(indexes.redundantSize); elRedundant.style.color = indexes.redundantSize > 0 ? '#10b981' : 'var(--av-text-soft)'; }
-        if (elEmpty) { elEmpty.innerText = emptyFoldersList.length; elEmpty.style.color = emptyFoldersList.length > 0 ? '#d97706' : 'var(--av-text-soft)'; }
+        if (elRate) { elRate.innerText = indexes.videoCount ? `${((indexes.validVideoCount / indexes.videoCount) * 100).toFixed(1)}%` : '0%'; elRate.style.color = indexes.validVideoCount ? 'var(--av-sky-fg)' : 'var(--av-text-soft)'; }
+        if (elDups) { elDups.innerText = `${indexes.dupGroupCount} / ${indexes.shaGroupCount}`; elDups.style.color = (indexes.dupGroupCount + indexes.shaGroupCount) > 0 ? 'var(--av-rose-fg)' : 'var(--av-text-soft)'; }
+        if (elRedundant) { elRedundant.innerText = formatSize(indexes.redundantSize); elRedundant.style.color = indexes.redundantSize > 0 ? 'var(--av-green-fg)' : 'var(--av-text-soft)'; }
+        if (elEmpty) { elEmpty.innerText = emptyFoldersList.length; elEmpty.style.color = emptyFoldersList.length > 0 ? 'var(--av-amber-fg)' : 'var(--av-text-soft)'; }
 
         const setTabBadge = (id, count) => {
             const el = document.getElementById(id);
@@ -2170,12 +3308,12 @@
 
         const contentBox = document.getElementById('dedup-content');
         contentBox.innerHTML = `
-            <div style="text-align:center; padding:80px 0; color:#2563eb;">
-                <div style="display:inline-block; width:36px; height:36px; border:3px solid #dbeafe; border-top-color:#2563eb; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+            <div style="text-align:center; padding:80px 0; color:var(--av-blue-fg);">
+                <div style="display:inline-block; width:36px; height:36px; border:3px solid var(--av-blue-bg); border-top-color:var(--av-blue-fg); border-radius:50%; animation:spin 0.8s linear infinite;"></div>
                 <div id="scan-loading-text" style="font-size:14px; font-weight:600; color:var(--av-text); margin-top:16px;">正在以${speedMode === 'safe' ? '安全防封' : '极速'}模式${isResume ? '接力续扫' : '读取列表'}...</div>
                 <div id="scan-loading-subtext" style="font-size:12px; color:var(--av-text-soft); margin-top:6px;">已启用仿生随机延时、忽略目录过滤与动态冷却</div>
                 <div style="margin-top:20px;">
-                    <button id="btn-abort-scan" style="background:var(--av-bg); color:#e11d48; border:1px solid #fecdd3; padding:6px 16px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:6px;">
+                    <button id="btn-abort-scan" style="background:var(--av-rose-bg); color:var(--av-rose-fg); border:1px solid var(--av-rose-border); padding:6px 16px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:6px;">
                         ${ICONS.stop} 停止扫描 (保留已搜结果)
                     </button>
                 </div>
@@ -2291,24 +3429,24 @@
 
                     ${!isInsideGroupCard ? `
                         <div style="display:inline-flex; align-items:center; gap:4px; margin-right:12px; flex-shrink:0;">
-                            <span style="min-width:82px; text-align:center; display:inline-block; box-sizing:border-box; background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; font-family:ui-monospace, monospace; font-size:11px; font-weight:600; padding:2px 7px; border-radius:4px; white-space:nowrap;">${escapeHtml(key)}</span>
+                            <span style="min-width:82px; text-align:center; display:inline-block; box-sizing:border-box; background:var(--av-indigo-bg); color:var(--av-indigo-fg); border:1px solid var(--av-indigo-border); font-family:ui-monospace, monospace; font-size:11px; font-weight:600; padding:2px 7px; border-radius:4px; white-space:nowrap;">${escapeHtml(key)}</span>
                             ${searchUrl ? `<a href="${searchUrl}" target="_blank" style="color:var(--av-text-soft); display:inline-flex; align-items:center; padding:3px;" title="在 ${searchSite.toUpperCase()} 中检索详情">${ICONS.external}</a>` : ''}
                         </div>
                     ` : ''}
 
                     <div style="flex:1; overflow:hidden; margin-right:10px; min-width:0;">
                         <div style="display:flex; align-items:center; gap:5px; overflow:hidden;">
-                            <span class="thumb-trigger" data-fid="${file.fid}" style="color:var(--av-text-soft); display:inline-flex; align-items:center; padding:2px; flex-shrink:0;" title="悬停预览缩略图与详情">${ICONS.eye}</span>
+                            <span class="thumb-trigger" data-fid="${file.fid}" style="color:var(--av-text-soft); display:inline-flex; align-items:center; padding:2px; flex-shrink:0;" title="悬停自动检索高清海报与详情">${ICONS.eye}</span>
                             <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(file.n)}">${formatFileNameHtml(file.n)}</div>
-                            ${isDamaged ? `<span style="background:#fee2e2; color:#991b1b; font-size:10px; font-weight:700; padding:1px 5px; border-radius:3px; flex-shrink:0;">疑似残损</span>` : ''}
-                            ${hasSub ? `<span style="background:#dcfce7; color:#15803d; font-size:10px; font-weight:700; padding:1px 5px; border-radius:3px; flex-shrink:0; display:inline-flex; align-items:center; gap:2px;">${ICONS.subtitle} 字幕</span>` : ''}
+                            ${isDamaged ? `<span style="background:var(--av-rose-bg); color:var(--av-rose-fg); border:1px solid var(--av-rose-border); font-size:10px; font-weight:700; padding:1px 5px; border-radius:3px; flex-shrink:0;">疑似残损</span>` : ''}
+                            ${hasSub ? `<span style="background:var(--av-sub-bg); color:var(--av-sub-fg); font-size:10px; font-weight:700; padding:1px 5px; border-radius:3px; flex-shrink:0; display:inline-flex; align-items:center; gap:2px;">${ICONS.subtitle} 字幕</span>` : ''}
                             ${badges.map(b => `<span style="background:${b.bg}; color:${b.color}; font-size:10px; font-weight:700; padding:1px 5px; border-radius:3px; flex-shrink:0;">${b.text}</span>`).join('')}
                         </div>
                         ${file.relPath && file.relPath !== '/' ? `<div style="font-size:11px; color:var(--av-text-soft); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">📁 ${escapeHtml(file.relPath)}</div>` : ''}
                     </div>
 
                     <div class="row-hover-actions" style="display:flex; align-items:center; gap:6px; margin-right:10px; flex-shrink:0;">
-                        ${isDifferentName ? `<a href="javascript:void(0)" class="quick-rename-file" data-fid="${file.fid}" style="color:#4338ca; background:#eef2ff; border:1px solid #c7d2fe; text-decoration:none; font-size:11px; font-weight:600; padding:2px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;" title="规范化重命名为: ${escapeHtml(stdName)}">${ICONS.edit} 改为规范名</a>` : ''}
+                        ${isDifferentName ? `<a href="javascript:void(0)" class="quick-rename-file" data-fid="${file.fid}" style="color:var(--av-indigo-fg); background:var(--av-indigo-bg); border:1px solid var(--av-indigo-border); text-decoration:none; font-size:11px; font-weight:600; padding:2px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;" title="规范化重命名为: ${escapeHtml(stdName)}">${ICONS.edit} 改为规范名</a>` : ''}
                         <a href="${folderUrl}" target="_blank" class="row-open-dir" style="color:var(--av-text-muted); text-decoration:none; font-size:11px; font-weight:500; padding:2px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:4px; border:1px solid transparent;" title="在115网页端打开所在目录">${ICONS.openDir} 打开目录</a>
                     </div>
 
@@ -2338,12 +3476,12 @@
                     <div class="av-modal-surface" style="border:1px solid var(--av-border); border-radius:8px; margin-bottom:10px; overflow:hidden;">
                         <div class="av-subsurface" style="padding:8px 14px; border-bottom:1px solid var(--av-border); display:flex; justify-content:space-between; align-items:center;">
                             <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="min-width:82px; text-align:center; display:inline-block; box-sizing:border-box; background:${isShaTab ? '#fef3c7' : '#eef2ff'}; color:${isShaTab ? '#92400e' : '#4338ca'}; border:1px solid ${isShaTab ? '#fde68a' : '#c7d2fe'}; font-family:ui-monospace, monospace; font-size:12px; font-weight:600; padding:3px 8px; border-radius:4px;">${escapeHtml(displayKey)}</span>
+                                <span style="min-width:82px; text-align:center; display:inline-block; box-sizing:border-box; background:${isShaTab ? 'var(--av-amber-bg)' : 'var(--av-indigo-bg)'}; color:${isShaTab ? 'var(--av-amber-fg)' : 'var(--av-indigo-fg)'}; border:1px solid ${isShaTab ? 'var(--av-amber-border)' : 'var(--av-indigo-border)'}; font-family:ui-monospace, monospace; font-size:12px; font-weight:600; padding:3px 8px; border-radius:4px;">${escapeHtml(displayKey)}</span>
                                 ${searchUrl ? `<a href="${searchUrl}" target="_blank" style="color:var(--av-text-muted); display:inline-flex; align-items:center; gap:3px; font-size:11px; text-decoration:none;">${ICONS.external} 详情</a>` : ''}
                                 <span style="font-size:12px; color:var(--av-text-muted); font-weight:500;">(共 ${items.length} 个${isShaTab ? '相同 SHA1 副本' : '同番号版本'})</span>
                             </div>
                             <div style="font-size:12px;">
-                                <a href="javascript:void(0)" class="quick-keep-one" data-key="${escapeHtml(key)}" style="color:#2563eb; text-decoration:none; margin-right:12px; font-weight:600;">保留最优项</a>
+                                <a href="javascript:void(0)" class="quick-keep-one" data-key="${escapeHtml(key)}" style="color:var(--av-blue-fg); text-decoration:none; margin-right:12px; font-weight:600;">保留最优项</a>
                                 <a href="javascript:void(0)" class="quick-uncheck" data-key="${escapeHtml(key)}" style="color:var(--av-text-muted); text-decoration:none;">取消选择</a>
                             </div>
                         </div>
@@ -2533,7 +3671,7 @@
             <div class="av-modal-surface" style="border:1px solid var(--av-border); border-radius:8px; padding:16px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
                     <div style="font-size:13px; font-weight:600;">
-                        共发现 <b style="color:#e11d48; font-variant-numeric:tabular-nums;">${list.length}</b> 个空文件夹 <span style="font-size:11px; color:var(--av-text-muted); font-weight:400;">(已开启父子级联防双删保护)</span>：
+                        共发现 <b style="color:var(--av-rose-fg); font-variant-numeric:tabular-nums;">${list.length}</b> 个空文件夹 <span style="font-size:11px; color:var(--av-text-muted); font-weight:400;">(已开启父子级联防双删保护)</span>：
                     </div>
                     <div style="display:flex; gap:8px; align-items:center;">
                         <button id="btn-empty-select-all" class="tool-btn av-input" style="padding:5px 12px; border-radius:6px; cursor:pointer; font-size:12px;">全选全部空目录</button>
@@ -2552,7 +3690,7 @@
                                 <span style="display:flex; align-items:center; color:#d97706; margin-right:8px;">${ICONS.folder}</span>
                                 <div style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-right:12px;" title="${escapeHtml(f.path || f.n)}">
                                     <span style="font-weight:600;">${escapeHtml(f.n)}</span>
-                                    <span style="background:${isCascade ? '#e0e7ff' : '#fef3c7'}; color:${isCascade ? '#3730a3' : '#92400e'}; font-size:11px; padding:2px 7px; border-radius:4px; margin-left:8px; font-weight:600;">${escapeHtml(f.reason || '直接空目录')}</span>
+                                    <span style="background:${isCascade ? 'var(--av-indigo-bg)' : 'var(--av-amber-bg)'}; color:${isCascade ? 'var(--av-indigo-fg)' : 'var(--av-amber-fg)'}; border:1px solid ${isCascade ? 'var(--av-indigo-border)' : 'var(--av-amber-border)'}; font-size:11px; padding:2px 7px; border-radius:4px; margin-left:8px; font-weight:600;">${escapeHtml(f.reason || '直接空目录')}</span>
                                     ${f.path ? `<span style="color:var(--av-text-soft); font-size:11px; margin-left:8px;">路径: ${escapeHtml(f.path)}</span>` : ''}
                                 </div>
                                 <a href="${folderUrl}" target="_blank" class="row-open-dir" style="color:var(--av-text-muted); text-decoration:none; font-size:11px; padding:2px 8px; border-radius:4px; margin-right:10px; display:inline-flex; align-items:center; gap:4px; border:1px solid transparent;">${ICONS.openDir} 打开父目录</a>
@@ -2805,7 +3943,7 @@
                             <div style="font-size:11px; color:var(--av-text-soft); margin-top:4px;">可用变量：{code} 番号 / {part} 分集 / {c} 中字 / {uc} 无码 / {tags} 所有徽章</div>
                         </div>
                         <div class="av-subsurface" style="padding:7px 10px; border-radius:6px; font-size:12px; color:var(--av-text-secondary);">
-                            效果预览：<b id="set-tpl-preview" style="color:#4f46e5; font-family:ui-monospace, monospace;"></b>
+                            效果预览：<b id="set-tpl-preview" style="color:var(--av-indigo-fg); font-family:ui-monospace, monospace;"></b>
                         </div>
                         <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--av-text-secondary); margin-top:10px; cursor:pointer;">
                             <input type="checkbox" id="set-sync-sub" ${settings.syncSubtitles ? 'checked' : ''}> 批量重命名 / 归档时同步联动处理同目录外挂字幕 (.ass/.srt/.ssa)
@@ -2814,11 +3952,16 @@
 
                     <div class="av-modal-surface" style="border:1px solid var(--av-border); border-radius:8px; padding:14px; display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                         <div>
-                            <div style="font-size:13px; font-weight:700; margin-bottom:6px;">2. 元数据外链站</div>
-                            <select id="set-search-site" class="av-input" style="width:100%; padding:7px 10px; border-radius:6px; font-size:12px;">
-                                <option value="javbus">JavBus</option>
-                                <option value="javdb">JavDB</option>
-                                <option value="avsox">AVSOX</option>
+                            <div style="font-size:13px; font-weight:700; margin-bottom:6px;">2. 元数据外链 &amp; 高清海报策略</div>
+                            <select id="set-search-site" class="av-input" style="width:100%; padding:7px 10px; border-radius:6px; font-size:12px; margin-bottom:6px;">
+                                <option value="javbus">优先 JavBus</option>
+                                <option value="javdb">优先 JavDB</option>
+                                <option value="avsox">优先 AVSOX</option>
+                            </select>
+                            <select id="set-poster-priority" class="av-input" style="width:100%; padding:7px 10px; border-radius:6px; font-size:12px;">
+                                <option value="hd_first">总是自动检索高清海报 (推荐)</option>
+                                <option value="fallback">仅115无内置图时检索高清海报</option>
+                                <option value="off">仅显示115内置缩略图</option>
                             </select>
                         </div>
                         <div>
@@ -2857,7 +4000,7 @@
                                 <span>过期时间(分钟): <input id="set-cache-ttl" class="av-input" type="number" min="1" max="1440" value="${Number(settings.cacheTtlMinutes || 30)}" style="width:60px; padding:2px 6px; border-radius:4px; font-size:12px;"></span>
                             </div>
                         </div>
-                        <button id="set-clear-cache" style="background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">清空缓存</button>
+                        <button id="set-clear-cache" style="background:var(--av-rose-bg); color:var(--av-rose-fg); border:1px solid var(--av-rose-border); padding:6px 12px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">清空缓存</button>
                     </div>
                 </div>
                 <div style="padding:14px 24px; border-top:1px solid var(--av-border); display:flex; justify-content:flex-end; gap:10px;">
@@ -2875,6 +4018,7 @@
 
         selTpl.value = settings.renameTemplate;
         overlay.querySelector('#set-search-site').value = settings.preferredSearchSite;
+        overlay.querySelector('#set-poster-priority').value = settings.posterPriority || 'hd_first';
         overlay.querySelector('#set-theme').value = settings.theme || 'auto';
 
         const updatePreview = () => {
@@ -2890,8 +4034,9 @@
         overlay.querySelector('#set-cancel').onclick = close;
 
         overlay.querySelector('#set-clear-cache').onclick = async () => {
+            clearHdPosterCaches();
             await CacheManager.clearAll();
-            await uiAlert('所有本地目录扫描缓存已清空！', '缓存已清空', 'info');
+            await uiAlert('所有本地目录扫描与海报缓存已清空！', '缓存已清空', 'info');
         };
 
         overlay.querySelector('#set-save').onclick = () => {
@@ -2901,6 +4046,7 @@
                 customTemplate: customInput.value.trim() || DEFAULT_SETTINGS.customTemplate,
                 syncSubtitles: overlay.querySelector('#set-sync-sub').checked,
                 preferredSearchSite: overlay.querySelector('#set-search-site').value,
+                posterPriority: overlay.querySelector('#set-poster-priority').value,
                 theme: overlay.querySelector('#set-theme').value,
                 customPrefixes: parseList(overlay.querySelector('#set-custom-prefixes').value),
                 customBlacklist: parseList(overlay.querySelector('#set-custom-blacklist').value),
@@ -3101,14 +4247,14 @@
                         <button id="diff-run" style="padding:6px 16px; background:#4f46e5; color:#fff; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">立即比对分析</button>
                     </div>
                     <div id="diff-result" style="display:none; margin-top:12px; grid-template-columns:1fr 1fr; gap:10px;">
-                        <div class="av-modal-surface" style="border:1px solid #fecdd3; border-radius:8px; padding:10px;">
-                            <div style="font-size:12px; font-weight:700; color:#e11d48; margin-bottom:6px;" id="diff-owned-title">网盘已存在 (0)</div>
+                        <div class="av-modal-surface" style="border:1px solid var(--av-rose-border); border-radius:8px; padding:10px;">
+                            <div style="font-size:12px; font-weight:700; color:var(--av-rose-fg); margin-bottom:6px;" id="diff-owned-title">网盘已存在 (0)</div>
                             <textarea id="diff-owned-list" class="av-input" readonly rows="5" style="width:100%; box-sizing:border-box; border:none; font-size:11px; font-family:ui-monospace, monospace; resize:none;"></textarea>
                         </div>
-                        <div class="av-modal-surface" style="border:1px solid #bbf7d0; border-radius:8px; padding:10px;">
+                        <div class="av-modal-surface" style="border:1px solid var(--av-sub-border); border-radius:8px; padding:10px;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                                <span style="font-size:12px; font-weight:700; color:#15803d;" id="diff-missing-title">网盘缺失 (0)</span>
-                                <a href="javascript:void(0)" id="diff-copy-missing" style="font-size:11px; color:#2563eb; text-decoration:none;">复制缺失</a>
+                                <span style="font-size:12px; font-weight:700; color:var(--av-sub-fg);" id="diff-missing-title">网盘缺失 (0)</span>
+                                <a href="javascript:void(0)" id="diff-copy-missing" style="font-size:11px; color:var(--av-blue-fg); text-decoration:none;">复制缺失</a>
                             </div>
                             <textarea id="diff-missing-list" class="av-input" readonly rows="5" style="width:100%; box-sizing:border-box; border:none; font-size:11px; font-family:ui-monospace, monospace; resize:none;"></textarea>
                         </div>
@@ -3140,7 +4286,7 @@
         const generateContent = (fmt) => {
             if (fmt === 'txt') return uniqueCodes.join('\n');
             if (fmt === 'md') {
-                return `# 115 网盘番号整理清单 (共 ${uniqueCodes.length} 部)\n\n` +
+                return `# 老司机工作台 · 115 影库整理清单 (共 ${uniqueCodes.length} 部)\n\n` +
                     allItems.map(i => `- \`${i.parsedCode}\`${i.partInfo ? ` [${i.partInfo}]` : ''} — ${i.n} (${formatSize(i.s)})`).join('\n');
             }
             const csvEsc = (v) => `"${String(v || '').replace(/"/g, '""')}"`;
@@ -3203,10 +4349,10 @@
             : list.map(batch => `
                 <div class="av-modal-surface" style="border:1px solid var(--av-border); border-radius:8px; padding:12px 14px; margin-bottom:10px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <div style="font-size:12px; font-weight:700;">${new Date(batch.time).toLocaleString()} · 共 <b style="color:#4f46e5;">${batch.count}</b> 个文件</div>
+                        <div style="font-size:12px; font-weight:700;">${new Date(batch.time).toLocaleString()} · 共 <b style="color:var(--av-indigo-fg);">${batch.count}</b> 个文件</div>
                         <div style="display:flex; gap:8px;">
                             <button class="hist-export-btn av-input" data-id="${batch.id}" style="padding:4px 10px; border-radius:6px; font-size:11px; cursor:pointer;">导出映射</button>
-                            <button class="hist-undo-btn" data-id="${batch.id}" style="padding:4px 10px; background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer;">↩️ 一键撤销还原</button>
+                            <button class="hist-undo-btn" data-id="${batch.id}" style="padding:4px 10px; background:var(--av-rose-bg); color:var(--av-rose-fg); border:1px solid var(--av-rose-border); border-radius:6px; font-size:11px; font-weight:600; cursor:pointer;">↩️ 一键撤销还原</button>
                         </div>
                     </div>
                     <div style="font-size:11px; color:var(--av-text-muted); line-height:1.5;">
@@ -3277,9 +4423,989 @@
         });
     }
 
+    // =========================================================================
+    // 论坛浏览增强模块 (98堂 / 色花堂：一键复制帖子链接、批量磁力/附件、筛选与图文预览)
+    // =========================================================================
+
+    function injectForumStyles() {
+        if (typeof document === 'undefined' || document.getElementById('av-forum-enhancer-css')) return;
+        const style = document.createElement('style');
+        style.id = 'av-forum-enhancer-css';
+        style.textContent = `
+            .av-forum-bar-cell { padding: 8px 10px !important; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+            .av-forum-chip-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+            .av-forum-chip {
+                display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 6px;
+                border: 1px solid #cbd5e1; background: #ffffff; color: #334155;
+                font-size: 12px; cursor: pointer; user-select: none; transition: all 0.15s ease;
+            }
+            .av-forum-chip:hover { border-color: #2563eb; color: #2563eb; }
+            .av-forum-chip.active { background: #fef08a; border-color: #eab308; color: #713f12; font-weight: 600; }
+            .av-forum-ckbox { width: 32px; text-align: center; vertical-align: middle; }
+            .av-forum-ckb { width: 15px; height: 15px; cursor: pointer; accent-color: #2563eb; vertical-align: middle; }
+            tr.av-forum-selected > th, tr.av-forum-selected > td { background-color: #eff6ff !important; }
+            .av-forum-owned-badge {
+                display: inline-flex; align-items: center; margin-left: 6px; padding: 1px 6px;
+                border-radius: 999px; font-size: 11px; font-weight: 600;
+                background: #dcfce7; color: #166534; border: 1px solid #86efac; vertical-align: middle;
+            }
+            .av-forum-code-badge {
+                display: inline-flex; align-items: center; margin-left: 6px; padding: 1px 6px;
+                border-radius: 4px; font-size: 11px; font-weight: 600; font-family: ui-monospace, monospace;
+                background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; vertical-align: middle;
+            }
+            #av-forum-panel {
+                position: fixed; left: 12px; top: 50%; transform: translateY(-50%); z-index: 99999;
+                width: 224px; max-height: 88vh; overflow-y: auto;
+                background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(8px);
+                border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
+                padding: 10px; color: #0f172a;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                font-size: 12px; line-height: 1.45; box-sizing: border-box;
+            }
+            #av-forum-panel.collapsed { width: auto; padding: 6px 10px; border-radius: 999px; }
+            .av-forum-panel-hdr { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; margin-bottom: 8px; }
+            .av-forum-btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+            .av-forum-btn {
+                display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+                padding: 6px 8px; border-radius: 7px; border: 1px solid transparent;
+                font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s ease;
+                white-space: nowrap; box-sizing: border-box; width: 100%;
+            }
+            .av-forum-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+            .av-forum-btn-primary { background: #2563eb; color: #ffffff; }
+            .av-forum-btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+            .av-forum-btn-success { background: #059669; color: #ffffff; }
+            .av-forum-btn-success:hover:not(:disabled) { background: #047857; }
+            .av-forum-btn-neutral { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
+            .av-forum-btn-neutral:hover:not(:disabled) { background: #e2e8f0; }
+            .av-forum-btn-danger { background: #ffe4e6; color: #be123c; border-color: #fda4af; }
+            .av-forum-result-box {
+                margin-top: 8px; max-height: 220px; overflow-y: auto;
+                padding: 8px; border-radius: 8px; border: 1px solid #bfdbfe; background: #eff6ff;
+                font-size: 11px; color: #1e3a8a;
+            }
+            .av-forum-result-box ul { margin: 4px 0 0 14px; padding: 0; list-style: disc; }
+            .av-forum-result-box li { margin-bottom: 3px; word-break: break-all; }
+            .av-forum-result-box a { color: #2563eb; text-decoration: none; }
+            .av-forum-result-box a:hover { text-decoration: underline; }
+            .av-forum-preview-card { padding: 8px 12px; background: #f8fafc; border-top: 1px dashed #e2e8f0; }
+            .av-forum-preview-text { white-space: pre-wrap; margin: 0 0 6px 0; color: #475569; font-size: 12px; line-height: 1.5; }
+            .av-forum-preview-imgs { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
+            .av-forum-preview-imgs img {
+                width: calc(33.33% - 6px); max-height: 220px; object-fit: cover;
+                border-radius: 6px; border: 1px solid #cbd5e1; background: #e2e8f0;
+            }
+            #av-forum-toast {
+                position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100000;
+                padding: 10px 18px; border-radius: 8px; background: #0f172a; color: #ffffff;
+                font-size: 13px; font-weight: 600; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.22);
+                display: none; pointer-events: none;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function runBatchQueue(items, worker, options = {}) {
+        const concurrency = Math.max(1, options.concurrency || 3);
+        const delayMs = Math.max(0, options.delayMs || 160);
+        const signal = options.signal || null;
+        const onProgress = typeof options.onProgress === 'function' ? options.onProgress : null;
+        const results = new Array(items.length);
+        let cursor = 0;
+        let completed = 0;
+
+        async function runWorker() {
+            while (cursor < items.length) {
+                if (signal && signal.aborted) break;
+                const idx = cursor++;
+                try {
+                    results[idx] = { ok: true, value: await worker(items[idx], idx) };
+                } catch (err) {
+                    results[idx] = { ok: false, error: err };
+                }
+                completed++;
+                if (onProgress) onProgress(completed, items.length);
+                if (cursor < items.length && delayMs > 0 && !(signal && signal.aborted)) {
+                    await sleep(delayMs);
+                }
+            }
+        }
+
+        const runners = [];
+        for (let i = 0; i < Math.min(concurrency, items.length); i++) {
+            runners.push(runWorker());
+        }
+        return Promise.all(runners).then(() => results);
+    }
+
+    function extractThreadPreviewFromHtml(html, baseOrigin) {
+        if (!html || typeof DOMParser === 'undefined') return { text: '', images: [] };
+        let doc;
+        try {
+            doc = new DOMParser().parseFromString(html, 'text/html');
+        } catch (e) {
+            return { text: '', images: [] };
+        }
+        const postBody = doc.querySelector('.t_f');
+        const rawText = postBody ? (postBody.textContent || '') : '';
+        const text = rawText.replace(/[ \t]+/g, ' ').replace(/\n+/g, '\n').trim().slice(0, 100);
+
+        const images = [];
+        const seen = new Set();
+        const collectImgs = (selector) => {
+            doc.querySelectorAll(selector).forEach(img => {
+                if (images.length >= 3) return;
+                const id = img.getAttribute('id') || '';
+                if (!/^aimg_\d+$/.test(id)) return;
+                const candidates = [
+                    img.getAttribute('file'),
+                    img.getAttribute('zoomfile'),
+                    img.getAttribute('data-original'),
+                    img.getAttribute('src')
+                ];
+                for (const rawSrc of candidates) {
+                    if (!rawSrc || /none\.gif|loading\.gif/i.test(rawSrc)) continue;
+                    const resolved = resolveForumAbsoluteUrl(rawSrc, baseOrigin);
+                    if (resolved && !seen.has(resolved)) {
+                        seen.add(resolved);
+                        images.push(resolved);
+                        break;
+                    }
+                }
+            });
+        };
+
+        collectImgs('.t_f img[id^="aimg_"]');
+        if (images.length === 0) {
+            collectImgs('.t_fsz img[id^="aimg_"]');
+        }
+        return { text, images };
+    }
+
+    function initForumEnhancer() {
+        if (typeof window === 'undefined' || typeof document === 'undefined') return;
+        if (!isForumSiteContext(document.title, window.location.href)) return;
+        if (document.getElementById('av-forum-panel')) return;
+
+        const params = parseForumUrlParams(window.location.href);
+        const mode1Table = document.querySelector('table#threadlisttableid');
+        const mode2Table = document.querySelector('div.tl form table');
+
+        let mode = 0;
+        if ((params.mod === 'forumdisplay' || mode1Table) && mode1Table) {
+            mode = 1;
+        } else if (
+            mode2Table &&
+            (params.mod === 'space' && params.uid && params.do === 'thread' && params.view === 'me')
+        ) {
+            mode = 2;
+        } else if (mode2Table && params.mod === 'space') {
+            mode = 2;
+        }
+        if (mode === 0) return;
+
+        // 移除论坛广告块（对齐原版 removeAdd）
+        document.querySelectorAll('div[class^="show-text"]').forEach(el => el.remove());
+
+        injectForumStyles();
+
+        const storedDict = gmGetValue(FORUM_DICT_GM_KEY, null);
+        const boardDict = cloneDefaultForumDict();
+        if (storedDict && typeof storedDict === 'object') {
+            for (const [k, v] of Object.entries(storedDict)) {
+                if (Array.isArray(v)) boardDict[k] = v.map(item => [...item]);
+            }
+        }
+
+        // 若版块未预设子分类或为空，尝试从页面自带 #thread_types 提取
+        if (mode === 1 && params.fid && (!boardDict[params.fid] || boardDict[params.fid].length === 0)) {
+            const pageTypes = [];
+            document.querySelectorAll('#thread_types li a[href*="typeid="]').forEach(a => {
+                const m = (a.getAttribute('href') || '').match(/[?&]typeid=(\d+)/);
+                const label = (a.childNodes[0]?.textContent || a.textContent || '').trim();
+                if (m && label) pageTypes.push([m[1], label, 1]);
+            });
+            if (pageTypes.length > 0) boardDict[params.fid] = pageTypes;
+        }
+
+        const savedState = gmGetValue(FORUM_SETTINGS_GM_KEY, {});
+        const state = {
+            selectTimeIdx: typeof savedState.selectTimeIdx === 'number' ? savedState.selectTimeIdx : -1,
+            downloadAttachments: savedState.downloadAttachments !== undefined ? Boolean(savedState.downloadAttachments) : true,
+            enhancePreview: savedState.enhancePreview !== undefined ? Boolean(savedState.enhancePreview) : true,
+            showResultBox: savedState.showResultBox !== undefined ? Boolean(savedState.showResultBox) : true,
+            copyIncludeTitle: Boolean(savedState.copyIncludeTitle),
+            collapsed: Boolean(savedState.collapsed)
+        };
+
+        const ownedMeta = gmGetValue(FORUM_OWNED_CODES_GM_KEY, null);
+        const ownedCodesSet = new Set(Array.isArray(ownedMeta && ownedMeta.codes) ? ownedMeta.codes : []);
+        const userSettings = getSettings();
+
+        const tuples = (mode === 1 && params.fid && Array.isArray(boardDict[params.fid])) ? boardDict[params.fid] : [];
+        let selectTypes = tuples.map((t, idx) => (t[2] === 1 ? idx : -1)).filter(idx => idx !== -1);
+        const threadHtmlCache = new Map();
+        const enhancedTids = new Set();
+        let activeAbortCtrl = null;
+        let lastCopiedLinksText = '';
+        let previewBusy = false;
+
+        function saveForumState() {
+            gmSetValue(FORUM_SETTINGS_GM_KEY, state);
+            if (mode === 1 && params.fid && Array.isArray(boardDict[params.fid])) {
+                const selectedSet = new Set(selectTypes);
+                boardDict[params.fid].forEach((tuple, idx) => {
+                    tuple[2] = selectedSet.has(idx) ? 1 : 0;
+                });
+                gmSetValue(FORUM_DICT_GM_KEY, boardDict);
+            }
+        }
+
+        let toastTimer = null;
+        function showForumToast(msg, duration = 2000) {
+            let toast = document.getElementById('av-forum-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'av-forum-toast';
+                document.body.appendChild(toast);
+            }
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { toast.style.display = 'none'; }, duration);
+        }
+
+        function getAllThreadRows() {
+            const rows = [];
+            if (mode === 1) {
+                document.querySelectorAll('table#threadlisttableid tbody[id^="normalthread_"]').forEach(tbody => {
+                    const tr = tbody.querySelector('tr');
+                    if (tr && tr.dataset.avForumTid) rows.push(tr);
+                });
+            } else {
+                document.querySelectorAll('div.tl form table tr').forEach(tr => {
+                    if (tr.dataset.avForumTid) rows.push(tr);
+                });
+            }
+            return rows;
+        }
+
+        function getTargetPosts(preferSelected = true) {
+            const allRows = getAllThreadRows();
+            const checkedRows = allRows.filter(tr => tr.classList.contains('av-forum-selected'));
+            const targetRows = (preferSelected && checkedRows.length > 0) ? checkedRows : allRows;
+            return targetRows.map(tr => ({
+                tid: tr.dataset.avForumTid,
+                title: tr.dataset.avForumTitle || '',
+                url: tr.dataset.avForumUrl || '',
+                code: tr.dataset.avForumCode || '',
+                owned: tr.dataset.avForumOwned === '1',
+                tr
+            }));
+        }
+
+        function updateRowSelectionState(tr, checked) {
+            const ckb = tr.querySelector('.av-forum-ckb');
+            if (ckb) ckb.checked = checked;
+            tr.classList.toggle('av-forum-selected', checked);
+        }
+
+        function updatePanelStats() {
+            const panel = document.getElementById('av-forum-panel');
+            if (!panel) return;
+            const rows = getAllThreadRows();
+            const selectedCount = rows.filter(tr => tr.classList.contains('av-forum-selected')).length;
+            const ownedCount = rows.filter(tr => tr.dataset.avForumOwned === '1').length;
+
+            const statEl = panel.querySelector('#av-forum-stat-text');
+            if (statEl) {
+                const ownedTxt = ownedCodesSet.size > 0 ? ` · 115已有 ${ownedCount}` : '';
+                statEl.textContent = `本页 ${rows.length} 贴 · 已选 ${selectedCount}${ownedTxt}`;
+            }
+            const copyPostBtn = panel.querySelector('#av-forum-copy-post-links');
+            if (copyPostBtn) {
+                copyPostBtn.textContent = selectedCount > 0
+                    ? `复制已选帖子链接 (${selectedCount})`
+                    : `复制全部帖子链接 (${rows.length})`;
+            }
+            const extractBtn = panel.querySelector('#av-forum-extract-links');
+            if (extractBtn && !activeAbortCtrl) {
+                extractBtn.textContent = selectedCount > 0
+                    ? `提取已选磁力/ed2k (${selectedCount})`
+                    : `提取全部磁力/ed2k (${rows.length})`;
+            }
+            const ckbAll = document.querySelector('.av-forum-ckb-all');
+            if (ckbAll) {
+                ckbAll.checked = rows.length > 0 && selectedCount === rows.length;
+            }
+        }
+
+        function findThreadTitleAnchor(row) {
+            if (mode === 2) {
+                return row.querySelector('th a[href*="tid="], th a[href*="thread-"], th a');
+            }
+            return (
+                row.querySelector('th a.s.xst') ||
+                row.querySelector('th a.xst') ||
+                row.querySelector('th a[id^="thread_"]') ||
+                Array.from(row.querySelectorAll('th a')).find(a => !a.closest('em') && /viewthread|thread-/i.test(a.getAttribute('href') || '')) ||
+                row.querySelector('th a')
+            );
+        }
+
+        function syncForumRows() {
+            if (mode === 1) {
+                const table = document.querySelector('table#threadlisttableid');
+                if (!table) return;
+                table.querySelectorAll('tr').forEach(row => {
+                    if (row.classList.contains('av-forum-preview-row') || row.closest('#av-forum-bar') || row.dataset.avForumBound === '1') return;
+                    const cells = row.querySelectorAll(':scope > th, :scope > td');
+                    if (cells.length === 0) return;
+
+                    // 处理分隔行（如“版块主题”或单格大 colspan 行），保持列对齐
+                    if (cells.length === 1 && cells[0].colSpan >= 3) {
+                        cells[0].colSpan = cells[0].colSpan + 1;
+                        row.dataset.avForumBound = '1';
+                        return;
+                    }
+                    if (cells.length > 5) return;
+
+                    row.dataset.avForumBound = '1';
+                    const cell = document.createElement('td');
+                    cell.className = 'av-forum-ckbox';
+
+                    const parentTbody = row.parentElement;
+                    const parentId = parentTbody ? (parentTbody.id || '') : '';
+                    if (parentId.startsWith('normalthread_')) {
+                        const titleAnchor = findThreadTitleAnchor(row);
+                        const href = titleAnchor ? (titleAnchor.getAttribute('href') || '') : '';
+                        const tid = extractTidFromHref(href, parentId);
+                        const title = titleAnchor ? titleAnchor.textContent.trim() : '';
+                        const fullUrl = resolveForumAbsoluteUrl(href, window.location.origin) ||
+                            (tid ? `${window.location.origin}/forum.php?mod=viewthread&tid=${tid}` : '');
+
+                        const typeAnchor = row.querySelector('th em a');
+                        const typeHref = typeAnchor ? (typeAnchor.getAttribute('href') || '') : '';
+                        const typeIdMatch = typeHref.match(/[?&]typeid=(\d+)/);
+                        const dateStr = row.querySelector('td.by em span span')?.getAttribute('title') ||
+                            row.querySelector('td.by em')?.textContent || '';
+
+                        const parsed = parseAvFileInfo(title, userSettings);
+                        const code = parsed && parsed.code ? parsed.code : '';
+                        const isOwned = Boolean(code && ownedCodesSet.has(code));
+
+                        row.dataset.avForumTid = tid;
+                        row.dataset.avForumTitle = title;
+                        row.dataset.avForumUrl = fullUrl;
+                        row.dataset.avForumTypeId = typeIdMatch ? typeIdMatch[1] : '';
+                        row.dataset.avForumTypeName = typeAnchor ? typeAnchor.textContent.trim() : '';
+                        row.dataset.avForumDate = dateStr.trim();
+                        row.dataset.avForumCode = code;
+                        row.dataset.avForumOwned = isOwned ? '1' : '0';
+
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.className = 'av-forum-ckb';
+                        checkbox.addEventListener('change', () => {
+                            row.classList.toggle('av-forum-selected', checkbox.checked);
+                            updatePanelStats();
+                        });
+                        cell.appendChild(checkbox);
+
+                        if (titleAnchor && !row.querySelector('.av-forum-owned-badge') && isOwned) {
+                            const badge = document.createElement('span');
+                            badge.className = 'av-forum-owned-badge';
+                            badge.title = `115网盘中已存在 ${code}`;
+                            badge.textContent = '115已有';
+                            titleAnchor.after(badge);
+                        }
+                    }
+                    row.prepend(cell);
+                });
+            } else if (mode === 2) {
+                const table = document.querySelector('div.tl form table');
+                if (!table) return;
+                table.querySelectorAll('tr').forEach(row => {
+                    if (row.classList.contains('av-forum-preview-row') || row.dataset.avForumBound === '1') return;
+                    row.dataset.avForumBound = '1';
+                    const cell = document.createElement('td');
+                    cell.className = 'av-forum-ckbox';
+
+                    if (row.classList.contains('th')) {
+                        const ckbAll = document.createElement('input');
+                        ckbAll.type = 'checkbox';
+                        ckbAll.className = 'av-forum-ckb av-forum-ckb-all';
+                        ckbAll.title = '全选/取消全选';
+                        ckbAll.addEventListener('change', () => {
+                            const target = ckbAll.checked;
+                            getAllThreadRows().forEach(tr => updateRowSelectionState(tr, target));
+                            updatePanelStats();
+                        });
+                        cell.appendChild(ckbAll);
+                    } else {
+                        const titleAnchor = findThreadTitleAnchor(row);
+                        const href = titleAnchor ? (titleAnchor.getAttribute('href') || '') : '';
+                        const tid = extractTidFromHref(href);
+                        if (tid) {
+                            const title = titleAnchor ? titleAnchor.textContent.trim() : '';
+                            const fullUrl = resolveForumAbsoluteUrl(href, window.location.origin) ||
+                                `${window.location.origin}/forum.php?mod=viewthread&tid=${tid}`;
+                            const parsed = parseAvFileInfo(title, userSettings);
+                            const code = parsed && parsed.code ? parsed.code : '';
+                            const isOwned = Boolean(code && ownedCodesSet.has(code));
+
+                            row.dataset.avForumTid = tid;
+                            row.dataset.avForumTitle = title;
+                            row.dataset.avForumUrl = fullUrl;
+                            row.dataset.avForumCode = code;
+                            row.dataset.avForumOwned = isOwned ? '1' : '0';
+
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            checkbox.className = 'av-forum-ckb';
+                            checkbox.addEventListener('change', () => {
+                                row.classList.toggle('av-forum-selected', checkbox.checked);
+                                updatePanelStats();
+                            });
+                            cell.appendChild(checkbox);
+
+                            if (titleAnchor && !row.querySelector('.av-forum-owned-badge') && isOwned) {
+                                const badge = document.createElement('span');
+                                badge.className = 'av-forum-owned-badge';
+                                badge.title = `115网盘中已存在 ${code}`;
+                                badge.textContent = '115已有';
+                                titleAnchor.after(badge);
+                            }
+                        }
+                    }
+                    row.prepend(cell);
+                });
+            }
+            updatePanelStats();
+        }
+
+        function applyForumFiltersAndSelect() {
+            if (mode !== 1) return;
+            const rows = getAllThreadRows();
+            const now = new Date();
+            const maxDays = (state.selectTimeIdx >= 0 && FORUM_TIME_FILTERS[state.selectTimeIdx])
+                ? FORUM_TIME_FILTERS[state.selectTimeIdx][1]
+                : 0;
+            const hasTypes = tuples.length > 0;
+            const activeTypeSet = new Set(selectTypes);
+
+            rows.forEach(row => {
+                if (maxDays > 0 && !filterForumPostByTime(row.dataset.avForumDate, maxDays, now)) {
+                    updateRowSelectionState(row, false);
+                    return;
+                }
+                if (!hasTypes) {
+                    updateRowSelectionState(row, maxDays > 0);
+                    return;
+                }
+                const rowTypeId = row.dataset.avForumTypeId;
+                const rowTypeName = row.dataset.avForumTypeName;
+                const matched = tuples.some((tuple, idx) =>
+                    activeTypeSet.has(idx) && (rowTypeId === tuple[0] || (rowTypeName && rowTypeName === tuple[1]))
+                );
+                updateRowSelectionState(row, matched);
+            });
+            updatePanelStats();
+        }
+
+        function injectFilterBar() {
+            if (mode !== 1 || document.getElementById('av-forum-bar')) return;
+            const table = document.querySelector('table#threadlisttableid');
+            const firstThread = table ? table.querySelector('tbody[id^="normalthread_"]') : null;
+            if (!firstThread) return;
+
+            const barTbody = document.createElement('tbody');
+            barTbody.id = 'av-forum-bar';
+
+            const renderBarRow = (labelText, chipsEl) => {
+                const tr = document.createElement('tr');
+                const tdLeft = document.createElement('td');
+                tdLeft.className = 'av-forum-bar-cell';
+                tdLeft.colSpan = 2;
+                tdLeft.innerHTML = `<strong style="color:#0f172a;font-size:12px;">${escapeHtml(labelText)}</strong>`;
+                const tdRight = document.createElement('td');
+                tdRight.className = 'av-forum-bar-cell';
+                tdRight.colSpan = 4;
+                tdRight.appendChild(chipsEl);
+                tr.appendChild(tdLeft);
+                tr.appendChild(tdRight);
+                return tr;
+            };
+
+            // 全选表头复选框
+            const topSelectAllCkb = document.createElement('input');
+            topSelectAllCkb.type = 'checkbox';
+            topSelectAllCkb.className = 'av-forum-ckb av-forum-ckb-all';
+            topSelectAllCkb.style.marginRight = '6px';
+            topSelectAllCkb.addEventListener('change', () => {
+                const target = topSelectAllCkb.checked;
+                if (tuples.length > 0) {
+                    selectTypes = target ? tuples.map((_, idx) => idx) : [];
+                    barTbody.querySelectorAll('.av-forum-type-chip').forEach(el => {
+                        el.classList.toggle('active', target);
+                    });
+                }
+                getAllThreadRows().forEach(tr => updateRowSelectionState(tr, target));
+                saveForumState();
+                updatePanelStats();
+            });
+
+            if (tuples.length > 0) {
+                const typeList = document.createElement('ul');
+                typeList.className = 'av-forum-chip-list';
+                tuples.forEach((tuple, idx) => {
+                    const li = document.createElement('li');
+                    li.className = 'av-forum-chip av-forum-type-chip' + (selectTypes.includes(idx) ? ' active' : '');
+                    li.textContent = tuple[1];
+                    li.addEventListener('click', () => {
+                        if (selectTypes.includes(idx)) {
+                            selectTypes = selectTypes.filter(x => x !== idx);
+                            li.classList.remove('active');
+                        } else {
+                            selectTypes.push(idx);
+                            li.classList.add('active');
+                        }
+                        saveForumState();
+                        applyForumFiltersAndSelect();
+                    });
+                    typeList.appendChild(li);
+                });
+                const typeRow = renderBarRow('分类快选', typeList);
+                typeRow.firstChild.prepend(topSelectAllCkb);
+                barTbody.appendChild(typeRow);
+            }
+
+            const timeList = document.createElement('ul');
+            timeList.className = 'av-forum-chip-list';
+            FORUM_TIME_FILTERS.forEach((tf, idx) => {
+                const li = document.createElement('li');
+                li.className = 'av-forum-chip av-forum-time-chip' + (state.selectTimeIdx === idx ? ' active' : '');
+                li.textContent = tf[0];
+                li.addEventListener('click', () => {
+                    state.selectTimeIdx = (state.selectTimeIdx === idx) ? -1 : idx;
+                    timeList.querySelectorAll('.av-forum-time-chip').forEach((el, j) => {
+                        el.classList.toggle('active', state.selectTimeIdx === j);
+                    });
+                    saveForumState();
+                    applyForumFiltersAndSelect();
+                });
+                timeList.appendChild(li);
+            });
+            const timeRow = renderBarRow('时间筛选', timeList);
+            if (tuples.length === 0) timeRow.firstChild.prepend(topSelectAllCkb);
+            barTbody.appendChild(timeRow);
+
+            firstThread.before(barTbody);
+        }
+
+        async function fetchThreadHtml(tid, url, signal) {
+            if (threadHtmlCache.has(tid)) return threadHtmlCache.get(tid);
+            const targetUrl = sanitizeHttpUrl(url) || `${window.location.origin}/forum.php?mod=viewthread&tid=${tid}`;
+            const resp = await fetch(targetUrl, { credentials: 'same-origin', signal });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const html = await resp.text();
+            threadHtmlCache.set(tid, html);
+            return html;
+        }
+
+        function removeAllPreviews() {
+            document.querySelectorAll('.av-forum-preview-row').forEach(el => el.remove());
+            enhancedTids.clear();
+        }
+
+        async function runPreviewEnhancement() {
+            if (!state.enhancePreview || previewBusy) return;
+            const pending = getAllThreadRows().filter(tr => {
+                const tid = tr.dataset.avForumTid;
+                return tid && !enhancedTids.has(tid);
+            });
+            if (pending.length === 0) return;
+
+            previewBusy = true;
+            try {
+                await runBatchQueue(pending, async (row) => {
+                    if (!state.enhancePreview) return;
+                    const tid = row.dataset.avForumTid;
+                    const url = row.dataset.avForumUrl;
+                    const html = await fetchThreadHtml(tid, url, null);
+                    if (!state.enhancePreview || enhancedTids.has(tid)) return;
+
+                    const { text, images } = extractThreadPreviewFromHtml(html, window.location.origin);
+                    enhancedTids.add(tid);
+                    if (!text && images.length === 0) return;
+
+                    const card = document.createElement('div');
+                    card.className = 'av-forum-preview-card';
+                    if (text) {
+                        const p = document.createElement('p');
+                        p.className = 'av-forum-preview-text';
+                        p.textContent = text;
+                        card.appendChild(p);
+                    }
+                    if (images.length > 0) {
+                        const imgWrap = document.createElement('div');
+                        imgWrap.className = 'av-forum-preview-imgs';
+                        images.forEach(src => {
+                            const img = document.createElement('img');
+                            img.src = src;
+                            img.loading = 'lazy';
+                            img.setAttribute('referrerpolicy', 'no-referrer');
+                            imgWrap.appendChild(img);
+                        });
+                        card.appendChild(imgWrap);
+                    }
+
+                    if (mode === 1) {
+                        const tbody = row.closest('tbody');
+                        if (!tbody) return;
+                        const previewTbody = document.createElement('tbody');
+                        previewTbody.className = 'av-forum-preview-row img_tbody';
+                        const ptr = document.createElement('tr');
+                        ptr.className = 'img_tr';
+                        const tdEmpty = document.createElement('td');
+                        tdEmpty.colSpan = 2;
+                        const tdBody = document.createElement('td');
+                        tdBody.colSpan = 4;
+                        tdBody.appendChild(card);
+                        ptr.appendChild(tdEmpty);
+                        ptr.appendChild(tdBody);
+                        previewTbody.appendChild(ptr);
+                        tbody.after(previewTbody);
+                    } else {
+                        const ptr = document.createElement('tr');
+                        ptr.className = 'av-forum-preview-row img_tr';
+                        const tdEmpty = document.createElement('td');
+                        const tdBody = document.createElement('td');
+                        tdBody.colSpan = Math.max(1, (row.cells ? row.cells.length : 5) - 1);
+                        tdBody.appendChild(card);
+                        ptr.appendChild(tdEmpty);
+                        ptr.appendChild(tdBody);
+                        row.after(ptr);
+                    }
+                }, { concurrency: 3, delayMs: 180 });
+            } finally {
+                previewBusy = false;
+            }
+        }
+
+        async function handleCopyPostLinks() {
+            const posts = getTargetPosts(true);
+            if (posts.length === 0) {
+                showForumToast('当前列表没有可复制的帖子');
+                return;
+            }
+            const formatted = formatThreadLinksText(posts, { includeTitle: state.copyIncludeTitle, dedup: true });
+            if (!formatted) {
+                showForumToast('未获取到有效帖子链接');
+                return;
+            }
+            lastCopiedLinksText = formatted;
+            const ok = await copyTextToClipboard(formatted);
+            const resultBox = document.getElementById('av-forum-result-box');
+            if (resultBox) {
+                const ul = document.createElement('ul');
+                const li = document.createElement('li');
+                li.textContent = ok
+                    ? `已复制 ${posts.length} 条帖子链接到剪贴板${state.copyIncludeTitle ? '（含标题）' : ''}`
+                    : '剪贴板写入受限，请尝试手动复制';
+                ul.appendChild(li);
+                resultBox.replaceChildren(ul);
+            }
+            showForumToast(ok ? `已一键复制 ${posts.length} 条帖子链接` : '复制失败，请检查剪贴板权限');
+        }
+
+        async function handleExtractResources() {
+            const extractBtn = document.getElementById('av-forum-extract-links');
+            if (activeAbortCtrl) {
+                activeAbortCtrl.abort();
+                return;
+            }
+            const posts = getTargetPosts(true);
+            if (posts.length === 0) {
+                showForumToast('当前列表没有可提取的帖子');
+                return;
+            }
+
+            activeAbortCtrl = new AbortController();
+            if (extractBtn) {
+                extractBtn.classList.remove('av-forum-btn-success');
+                extractBtn.classList.add('av-forum-btn-danger');
+                extractBtn.textContent = `停止提取 (0/${posts.length})`;
+            }
+
+            try {
+                const results = await runBatchQueue(
+                    posts,
+                    async (post) => {
+                        const html = await fetchThreadHtml(post.tid, post.url, activeAbortCtrl.signal);
+                        return extractThreadResources(html, {
+                            baseOrigin: window.location.origin,
+                            includeAttachments: state.downloadAttachments
+                        });
+                    },
+                    {
+                        concurrency: 3,
+                        delayMs: 180,
+                        signal: activeAbortCtrl.signal,
+                        onProgress: (done, total) => {
+                            if (extractBtn) extractBtn.textContent = `停止提取 (${done}/${total})`;
+                        }
+                    }
+                );
+
+                const allLinks = [];
+                const seenLinks = new Set();
+                const allAttachments = [];
+                const failedPosts = [];
+                let successPostCount = 0;
+
+                results.forEach((res, idx) => {
+                    const post = posts[idx];
+                    if (!res || !res.ok || !res.value) {
+                        failedPosts.push(post);
+                        return;
+                    }
+                    const { links, attachments } = res.value;
+                    if (links.length === 0 && attachments.length === 0) {
+                        failedPosts.push(post);
+                        return;
+                    }
+                    successPostCount++;
+                    links.forEach(link => {
+                        const key = link.toLowerCase();
+                        if (!seenLinks.has(key)) {
+                            seenLinks.add(key);
+                            allLinks.push(link);
+                        }
+                    });
+                    attachments.forEach(att => allAttachments.push(att));
+                });
+
+                if (state.downloadAttachments && allAttachments.length > 0) {
+                    allAttachments.forEach(att => {
+                        const safeUrl = sanitizeHttpUrl(att.url);
+                        if (safeUrl) window.open(safeUrl, '_blank', 'noopener');
+                    });
+                }
+
+                const joined = allLinks.join('\r\n');
+                lastCopiedLinksText = joined;
+                const copyOk = joined ? await copyTextToClipboard(joined) : false;
+
+                const summary = `成功提取 ${successPostCount}/${posts.length} 贴：${allLinks.length} 条磁力/ed2k，${state.downloadAttachments ? allAttachments.length : 0} 个附件`;
+                showForumToast(allLinks.length > 0 && !copyOk ? '剪贴板写入受限，请点击再复制' : summary, 2800);
+
+                const resultBox = document.getElementById('av-forum-result-box');
+                if (resultBox) {
+                    const wrap = document.createElement('div');
+                    const p = document.createElement('div');
+                    p.style.fontWeight = '600';
+                    p.textContent = summary;
+                    wrap.appendChild(p);
+
+                    const ul = document.createElement('ul');
+                    if (failedPosts.length > 0) {
+                        failedPosts.forEach(fp => {
+                            const li = document.createElement('li');
+                            const a = document.createElement('a');
+                            a.href = sanitizeHttpUrl(fp.url) || '#';
+                            a.target = '_blank';
+                            a.rel = 'noopener noreferrer';
+                            a.textContent = fp.title || `TID ${fp.tid}`;
+                            li.appendChild(document.createTextNode('未找到资源/失败：'));
+                            li.appendChild(a);
+                            ul.appendChild(li);
+                        });
+                    } else {
+                        const li = document.createElement('li');
+                        li.textContent = '所选帖子已全部成功处理';
+                        ul.appendChild(li);
+                    }
+                    wrap.appendChild(ul);
+                    resultBox.replaceChildren(wrap);
+                }
+            } finally {
+                activeAbortCtrl = null;
+                if (extractBtn) {
+                    extractBtn.classList.remove('av-forum-btn-danger');
+                    extractBtn.classList.add('av-forum-btn-success');
+                }
+                updatePanelStats();
+            }
+        }
+
+        function renderPanel() {
+            const existing = document.getElementById('av-forum-panel');
+            if (existing) existing.remove();
+
+            const panel = document.createElement('div');
+            panel.id = 'av-forum-panel';
+            if (state.collapsed) panel.classList.add('collapsed');
+
+            if (state.collapsed) {
+                const expandBtn = document.createElement('button');
+                expandBtn.className = 'av-forum-btn av-forum-btn-primary';
+                expandBtn.innerHTML = `${createBrandIconSvg(16)} <span>老司机工作台</span>`;
+                expandBtn.addEventListener('click', () => {
+                    state.collapsed = false;
+                    saveForumState();
+                    renderPanel();
+                    updatePanelStats();
+                });
+                panel.appendChild(expandBtn);
+                document.body.appendChild(panel);
+                return;
+            }
+
+            panel.innerHTML = `
+                <div class="av-forum-panel-hdr">
+                    <div style="display:flex;align-items:center;gap:7px;">
+                        ${createBrandIconSvg(20)}
+                        <div>
+                            <div style="font-weight:700;font-size:13px;color:#0f172a;">老司机工作台</div>
+                            <div id="av-forum-stat-text" style="font-size:11px;color:#64748b;">本页 0 贴 · 已选 0</div>
+                        </div>
+                    </div>
+                    <button id="av-forum-collapse-btn" title="折叠面板" style="border:1px solid #cbd5e1;background:#f8fafc;color:#475569;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:11px;">收起</button>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                    <button id="av-forum-copy-post-links" class="av-forum-btn av-forum-btn-primary">复制全部帖子链接</button>
+                    <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;cursor:pointer;padding:0 2px;">
+                        <input id="av-forum-include-title" type="checkbox" ${state.copyIncludeTitle ? 'checked' : ''}>
+                        <span>复制帖子链接附带标题</span>
+                    </label>
+                    <button id="av-forum-extract-links" class="av-forum-btn av-forum-btn-success">提取全部磁力/ed2k</button>
+                    <div class="av-forum-btn-grid">
+                        <button id="av-forum-select-all" class="av-forum-btn av-forum-btn-neutral">全选/清空</button>
+                        <button id="av-forum-select-unowned" class="av-forum-btn av-forum-btn-neutral" title="排除[115已有]番号贴，勾选其余帖子">仅勾未拥有</button>
+                    </div>
+                    <div class="av-forum-btn-grid">
+                        <button id="av-forum-toggle-attach" class="av-forum-btn av-forum-btn-neutral">${state.downloadAttachments ? '下载附件: 开' : '下载附件: 关'}</button>
+                        <button id="av-forum-toggle-enhance" class="av-forum-btn av-forum-btn-neutral">${state.enhancePreview ? '关闭图文预览' : '开启图文预览'}</button>
+                    </div>
+                    <div class="av-forum-btn-grid">
+                        <button id="av-forum-toggle-info" class="av-forum-btn av-forum-btn-neutral">${state.showResultBox ? '隐藏提示框' : '显示提示框'}</button>
+                        <button id="av-forum-recopy" class="av-forum-btn av-forum-btn-neutral">再复制上次</button>
+                    </div>
+                </div>
+                <div id="av-forum-result-box" class="av-forum-result-box" style="display:${state.showResultBox ? 'block' : 'none'};">
+                    未勾选帖子时点击按钮，将默认操作本页全部帖子；若需下载附件请允许本站弹出窗口。
+                </div>
+            `;
+
+            document.body.appendChild(panel);
+
+            panel.querySelector('#av-forum-collapse-btn').addEventListener('click', () => {
+                state.collapsed = true;
+                saveForumState();
+                renderPanel();
+            });
+            panel.querySelector('#av-forum-copy-post-links').addEventListener('click', handleCopyPostLinks);
+            panel.querySelector('#av-forum-include-title').addEventListener('change', (e) => {
+                state.copyIncludeTitle = Boolean(e.target.checked);
+                saveForumState();
+            });
+            panel.querySelector('#av-forum-extract-links').addEventListener('click', handleExtractResources);
+            panel.querySelector('#av-forum-select-all').addEventListener('click', () => {
+                const rows = getAllThreadRows();
+                const allSelected = rows.length > 0 && rows.every(r => r.classList.contains('av-forum-selected'));
+                rows.forEach(r => updateRowSelectionState(r, !allSelected));
+                updatePanelStats();
+            });
+            panel.querySelector('#av-forum-select-unowned').addEventListener('click', () => {
+                if (ownedCodesSet.size === 0) {
+                    showForumToast('暂无115已拥有番号数据：请先在 115.com 扫描网盘目录', 2600);
+                    return;
+                }
+                let picked = 0;
+                getAllThreadRows().forEach(r => {
+                    const keep = r.dataset.avForumOwned !== '1';
+                    updateRowSelectionState(r, keep);
+                    if (keep) picked++;
+                });
+                updatePanelStats();
+                showForumToast(`已勾选 ${picked} 个未拥有帖子`);
+            });
+            panel.querySelector('#av-forum-toggle-attach').addEventListener('click', (e) => {
+                state.downloadAttachments = !state.downloadAttachments;
+                e.currentTarget.textContent = state.downloadAttachments ? '下载附件: 开' : '下载附件: 关';
+                saveForumState();
+            });
+            panel.querySelector('#av-forum-toggle-enhance').addEventListener('click', (e) => {
+                state.enhancePreview = !state.enhancePreview;
+                e.currentTarget.textContent = state.enhancePreview ? '关闭图文预览' : '开启图文预览';
+                saveForumState();
+                if (state.enhancePreview) runPreviewEnhancement();
+                else removeAllPreviews();
+            });
+            panel.querySelector('#av-forum-toggle-info').addEventListener('click', (e) => {
+                state.showResultBox = !state.showResultBox;
+                e.currentTarget.textContent = state.showResultBox ? '隐藏提示框' : '显示提示框';
+                const box = panel.querySelector('#av-forum-result-box');
+                if (box) box.style.display = state.showResultBox ? 'block' : 'none';
+                saveForumState();
+            });
+            panel.querySelector('#av-forum-recopy').addEventListener('click', async () => {
+                if (!lastCopiedLinksText) {
+                    showForumToast('暂无可复用的上次复制结果');
+                    return;
+                }
+                const ok = await copyTextToClipboard(lastCopiedLinksText);
+                showForumToast(ok ? '已重新写入剪贴板' : '复制失败，请检查权限');
+            });
+        }
+
+        // 执行初始化
+        syncForumRows();
+        injectFilterBar();
+        if (mode === 1 && (tuples.length > 0 || state.selectTimeIdx !== -1)) {
+            applyForumFiltersAndSelect();
+        }
+        renderPanel();
+        updatePanelStats();
+        if (state.enhancePreview) {
+            runPreviewEnhancement();
+        }
+
+        // 监听 Discuz 下一页 / 加载更多新主题
+        const handleLazyAppend = () => {
+            setTimeout(() => {
+                syncForumRows();
+                if (state.enhancePreview) runPreviewEnhancement();
+            }, 1500);
+        };
+        document.querySelectorAll('a.bm_h, tbody#forumnewshow a').forEach(btn => {
+            btn.addEventListener('click', handleLazyAppend);
+        });
+
+        window.addEventListener('beforeunload', saveForumState);
+    }
+
+    function bootstrapUserscript() {
+        if (typeof window === 'undefined' || typeof document === 'undefined') return;
+        const host = String(window.location.hostname || '').toLowerCase();
+        if (host === '115.com' || host.endsWith('.115.com')) {
+            window.addEventListener('load', () => setTimeout(initUI, 1500));
+            setInterval(() => { if (!document.getElementById('av-dedup-launcher')) initUI(); }, 2500);
+            return;
+        }
+        if (isForumSiteContext(document.title, window.location.href)) {
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => setTimeout(initForumEnhancer, 200));
+            } else {
+                initForumEnhancer();
+            }
+        }
+    }
+
     if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-        window.addEventListener('load', () => setTimeout(initUI, 1500));
-        setInterval(() => { if (!document.getElementById('av-dedup-launcher')) initUI(); }, 2500);
+        bootstrapUserscript();
     }
 
     if (typeof window === 'undefined' && typeof module !== 'undefined' && module.exports) {
@@ -3304,7 +5430,21 @@
             isSubtitleFile,
             isDamagedVideoFile,
             isFolderIgnored,
-            sanitizeHttpUrl
+            sanitizeHttpUrl,
+            isForumSiteContext,
+            parseForumUrlParams,
+            extractTidFromHref,
+            isForumAttachmentHref,
+            extractThreadResources,
+            formatThreadLinksText,
+            filterForumPostByTime,
+            resolvePosterUrl,
+            normalizeSearchCodeForSite,
+            isMatchingAvCode,
+            parseJavBusHtml,
+            parseJavDbHtml,
+            parseAvsoxHtml,
+            buildPosterFetchPlan
         };
     }
 })();
