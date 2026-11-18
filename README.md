@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Supported-green.svg)](https://www.tampermonkey.net/)
-[![Version](https://img.shields.io/badge/Version-5.0.0-blue.svg)](https://github.com/thevipsong/115-av-dedup-helper)
+[![Version](https://img.shields.io/badge/Version-5.1.0-blue.svg)](https://github.com/thevipsong/115-av-dedup-helper)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/thevipsong/115-av-dedup-helper/pulls)
 
 [核心特性](#-核心特性) • [界面预览](#-界面预览) • [安装方式](#-安装指南) • [使用教程](#-使用教程) • [版本记录](#-版本演进记录) • [免责声明](#-免责声明)
@@ -177,6 +177,22 @@ node --test tests/parser.test.js
 ---
 
 ## 📑 版本演进记录
+
+### v5.1.0 (全量 Bug 修复 · 数据驱动跨页选区 / 乐观更新免重扫 / 断点接力 / 深色模式与新扩展)
+- **🐛 核心 Bug 全量修复**：
+  - **空目录父子防双删**：删除空目录时自动剔除被包含的嵌套子目录，避免父子同删引发接口报错；
+  - **跨页数据驱动选区**：修复分页超过 50 组后「保留最大/最新」漏掉第 2 页以后及翻页丢失勾选的问题；
+  - **动作上下文精准一致**：未勾选直接重命名/归档时严格遵循当前 Tab（含 SHA1）与搜索/特性筛选条件，不再误及不可见文件；
+  - **归档重名容错与去重**：同一字幕不重复入队移动，遇目录已存在时自动查询并复用其 CID；
+  - **缓存 TTL 与切目录自动重置**：新增可配置缓存有效期（默认 30 分钟），切换新目录打开弹窗自动清理残留过滤词；修复 `Part-C` 误标“中字”与无重复时快选按钮未禁用的问题；「非番号/杂质」与「空文件夹」全面支持完整分页。
+- **⚡ 架构与性能优化**：
+  - **局部乐观更新（零请求秒刷）**：改名、删除、归档、撤销成功后直接原地刷新内存索引与 IndexedDB 缓存，无需再重新全盘遍历 115 接口；
+  - **事件委托与断点接力**：采用单层事件委托替代每行数百个闭包；超过 150 目录上限或中止后支持在横幅点击 **【▶ 接力继续扫描剩余目录】**；GET 请求遇偶发抖动支持自动退避重试 1 次。
+- **🚀 实用新特性**：
+  - **✨ 智能优选保留策略**：新增综合评分优选，按体积 ➔ 中字/4K ➔ 已归档子目录 ➔ 规范命名优先顺序精准留一；
+  - **⚠️ 疑似残损视频 (<10MB / 0B) 专查**：快速筛出离线失败残留的空/残损假视频；
+  - **📦 跨目录集中汇总提取**：支持在「智能归档」选择目标目录或填入 CID 将跨子目录文件汇总归一；
+  - **🌙 深色模式、快捷键与正则自定义**：支持 Follow System / Dark / Light 三模主题、`Shift` 区间连选、`Esc` 关窗、`Cmd/Ctrl+F` 聚焦搜索，以及设置自定义厂牌前缀白名单与屏蔽词黑名单。
 
 ### v5.0.0 (全能整理工作台升级 · SHA1 同源去重 / 智能归档 / 自定义模板 / 缓存与撤销 / UI重构)
 - **🧬 SHA1 精准二进制查重**：新增 **「同源(SHA1)」** 独立选项卡，无视文件名称差异，直接依据 115 文件 SHA1 指纹与体积 100% 揪出改名后的完全相同文件副本。
