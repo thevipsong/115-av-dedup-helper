@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         老司机工作台
 // @namespace    https://github.com/thevipsong/115-av-dedup-helper
-// @version      5.2.1
-// @description  老司机工作台：专为115网盘与98堂/色花堂打造的一体化影库整理神器。网盘端支持SHA1同源查重、智能优选、模板重命名、归档提取、自动检索高清海报、夜间模式、清单查漏与Anti-WAF装甲；论坛端支持版块与时间快选、批量提取磁力/ed2k/附件，并跨站自动标记[115已有]。
+// @version      5.3.0
+// @description  老司机工作台：专为115网盘与98堂/色花堂打造的一体化影库整理神器。网盘端支持SHA1同源查重、智能优选、模板重命名、归档提取、自动检索高清海报、夜间模式、清单查漏与Anti-WAF装甲；论坛端支持版块与时间快选、批量提取磁力/ed2k/附件，并跨站自动标记[115已有]，内置自动检查与一键升级。
 // @author       thevipsong
 // @license      MIT
 // @icon         data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22b%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%230f172a%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%231e293b%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22c%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%236366f1%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%232563eb%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22r%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2338bdf8%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23818cf8%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%2256%22%20height%3D%2256%22%20rx%3D%2214%22%20fill%3D%22url(%23b)%22%2F%3E%3Crect%20x%3D%2215%22%20y%3D%2214%22%20width%3D%2226%22%20height%3D%2233%22%20rx%3D%224.5%22%20transform%3D%22rotate(-10%2028%2030.5)%22%20fill%3D%22url(%23c)%22%20opacity%3D%22.92%22%2F%3E%3Crect%20x%3D%2220%22%20y%3D%2217%22%20width%3D%2228%22%20height%3D%2228%22%20rx%3D%225.5%22%20fill%3D%22rgba(148%2C163%2C184%2C.18)%22%20stroke%3D%22rgba(226%2C232%2C240%2C.45)%22%20stroke-width%3D%221.2%22%2F%3E%3Ccircle%20cx%3D%2234%22%20cy%3D%2231%22%20r%3D%2210%22%20fill%3D%22none%22%20stroke%3D%22url(%23r)%22%20stroke-width%3D%222.2%22%2F%3E%3Crect%20x%3D%2228.5%22%20y%3D%2227%22%20width%3D%2211%22%20height%3D%228%22%20rx%3D%221.8%22%20fill%3D%22none%22%20stroke%3D%22%23e0f2fe%22%20stroke-width%3D%221.6%22%2F%3E%3Cpolygon%20points%3D%2232.8%2C29.1%2036.6%2C31%2032.8%2C32.9%22%20fill%3D%22%23e0f2fe%22%2F%3E%3Cpath%20d%3D%22M48%209.5L49.4%2013.6L53.5%2015L49.4%2016.4L48%2020.5L46.6%2016.4L42.5%2015L46.6%2013.6Z%22%20fill%3D%22%2334d399%22%2F%3E%3C%2Fsvg%3E
 // @homepageURL  https://github.com/thevipsong/115-av-dedup-helper
 // @supportURL   https://github.com/thevipsong/115-av-dedup-helper/issues
-// @updateURL    https://raw.githubusercontent.com/thevipsong/115-av-dedup-helper/main/115-av-dedup-helper.user.js
+// @updateURL    https://raw.githubusercontent.com/thevipsong/115-av-dedup-helper/main/115-av-dedup-helper.meta.js
 // @downloadURL  https://raw.githubusercontent.com/thevipsong/115-av-dedup-helper/main/115-av-dedup-helper.user.js
 // @match        https://115.com/*
 // @match        https://*.sehuatang.org/*
@@ -18,6 +18,8 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_setClipboard
+// @connect      raw.githubusercontent.com
+// @connect      cdn.jsdelivr.net
 // @connect      javbus.com
 // @connect      javdb.com
 // @connect      avsox.click
@@ -31,7 +33,11 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '5.2.1';
+    const APP_VERSION = '5.3.0';
+    const SCRIPT_UPDATE_META_URL = 'https://raw.githubusercontent.com/thevipsong/115-av-dedup-helper/main/115-av-dedup-helper.meta.js';
+    const SCRIPT_UPDATE_CDN_META_URL = 'https://cdn.jsdelivr.net/gh/thevipsong/115-av-dedup-helper@main/115-av-dedup-helper.meta.js';
+    const SCRIPT_UPDATE_DOWNLOAD_URL = 'https://raw.githubusercontent.com/thevipsong/115-av-dedup-helper/main/115-av-dedup-helper.user.js';
+    const SCRIPT_UPDATE_CACHE_KEY = 'av_script_update_state_v1';
     const SETTINGS_KEY = 'av_dedup_settings_v5';
     const HISTORY_KEY = 'av_dedup_rename_history_v5';
     const DB_NAME = 'av_dedup_cache_v5';
@@ -426,9 +432,23 @@
         return { links, attachments };
     }
 
-    function parseCalendarDate(dateStr) {
+    function parseCalendarDate(dateStr, nowDate = new Date()) {
         const raw = String(dateStr || '').trim();
         if (!raw) return null;
+        const baseNow = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate());
+        if (/^(?:刚刚|今天)/.test(raw) || /(?:秒|分钟|小时|半小时)\s*前/.test(raw)) {
+            return baseNow;
+        }
+        if (/昨天/.test(raw)) {
+            return new Date(baseNow.getTime() - 86400000);
+        }
+        if (/前天/.test(raw)) {
+            return new Date(baseNow.getTime() - 2 * 86400000);
+        }
+        const daysAgo = raw.match(/(\d+)\s*天前/);
+        if (daysAgo) {
+            return new Date(baseNow.getTime() - Number(daysAgo[1]) * 86400000);
+        }
         const ymd = raw.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
         if (ymd) {
             const d = new Date(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3]));
@@ -441,7 +461,7 @@
 
     function filterForumPostByTime(dateStr, maxDays, nowDate = new Date()) {
         if (!maxDays || maxDays <= 0) return true;
-        const postDay = parseCalendarDate(dateStr);
+        const postDay = parseCalendarDate(dateStr, nowDate);
         if (!postDay) return false;
         const nowDay = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate());
         const diffDays = Math.ceil((nowDay.getTime() - postDay.getTime()) / (1000 * 60 * 60 * 24));
@@ -454,6 +474,7 @@
         syncSubtitles: true,
         preferredSearchSite: 'javbus',   // 'javbus' | 'javdb' | 'avsox'
         posterPriority: 'hd_first',      // 'hd_first' | 'fallback' | 'off'
+        autoCheckUpdate: true,           // 自动检查脚本新版本并提示升级
         ignoreFolders: [],               // Array<string>
         customPrefixes: [],              // 自定义扩展前缀白名单
         customBlacklist: [],             // 自定义屏蔽词黑名单
@@ -462,6 +483,25 @@
         cacheTtlMinutes: 30,             // 默认 30 分钟本地缓存有效期
         theme: 'auto'                    // 'auto' | 'light' | 'dark'
     };
+
+    function compareSemver(a, b) {
+        const parse = (v) => String(v || '').trim().replace(/^v/i, '').split('-')[0].split('.').map(n => parseInt(n, 10) || 0);
+        const pa = parse(a);
+        const pb = parse(b);
+        const len = Math.max(pa.length, pb.length);
+        for (let i = 0; i < len; i++) {
+            const da = pa[i] || 0;
+            const db = pb[i] || 0;
+            if (da > db) return 1;
+            if (da < db) return -1;
+        }
+        return 0;
+    }
+
+    function parseUserscriptVersionFromMeta(metaText) {
+        const m = String(metaText || '').match(/^\s*\/\/\s*@version\s+([^\s\r\n]+)/mi);
+        return m ? m[1].trim() : '';
+    }
 
     function safeGetLocalStorage(key, fallback) {
         try {
@@ -713,11 +753,11 @@
             if (mPartChar) {
                 part = mPartChar[1].toUpperCase() + '-' + mPartChar[2].toUpperCase();
             } else {
-                const mEndChar = name.match(/[-_ ]([abAB])$/);
+                const mEndChar = name.match(/\d.*[-_ ]([abAB])$/);
                 if (mEndChar) {
                     part = 'PART-' + mEndChar[1].toUpperCase();
                 } else {
-                    const mEndNum = name.match(/[-_ ]([1-9])$/);
+                    const mEndNum = name.match(/\d.*[-_ ]([1-9])$/);
                     if (mEndNum) {
                         part = 'PART' + mEndNum[1];
                     }
@@ -955,7 +995,7 @@
     }
 
     // 预规划归档分桶（Set 去重 fid，支持按前缀/一影一夹/指定目标 CID）
-    function planArchiveBuckets(targetFiles, subtitleFiles, mode, customTargetCid = '', syncSubtitles = true) {
+    function planArchiveBuckets(targetFiles, subtitleFiles, mode, customTargetCid = '', syncSubtitles = true, parseOptions = {}) {
         const buckets = new Map(); // folderKey -> Set<fid>
         for (const f of targetFiles) {
             if (mode === 'custom_cid') {
@@ -964,7 +1004,7 @@
                 if (!buckets.has(tc)) buckets.set(tc, new Set());
                 buckets.get(tc).add(String(f.fid));
                 if (syncSubtitles) {
-                    findPairedSubtitles(f, subtitleFiles).forEach(({ file: s }) => buckets.get(tc).add(String(s.fid)));
+                    findPairedSubtitles(f, subtitleFiles, parseOptions).forEach(({ file: s }) => buckets.get(tc).add(String(s.fid)));
                 }
                 continue;
             }
@@ -973,7 +1013,7 @@
             if (!buckets.has(targetFolderName)) buckets.set(targetFolderName, new Set());
             buckets.get(targetFolderName).add(String(f.fid));
             if (syncSubtitles) {
-                findPairedSubtitles(f, subtitleFiles).forEach(({ file: s }) => buckets.get(targetFolderName).add(String(s.fid)));
+                findPairedSubtitles(f, subtitleFiles, parseOptions).forEach(({ file: s }) => buckets.get(targetFolderName).add(String(s.fid)));
             }
         }
         return buckets;
@@ -2397,6 +2437,95 @@
         });
     }
 
+    const UPDATE_CHECK_INTERVAL_MS = 2 * 60 * 60 * 1000;
+
+    async function checkScriptUpdate({ force = false } = {}) {
+        const cached = gmGetValue(SCRIPT_UPDATE_CACHE_KEY, null);
+        const now = Date.now();
+        if (!force && cached && cached.checkedAt && (now - cached.checkedAt < UPDATE_CHECK_INTERVAL_MS) && cached.latestVersion) {
+            return {
+                hasUpdate: compareSemver(cached.latestVersion, APP_VERSION) > 0,
+                latestVersion: cached.latestVersion,
+                currentVersion: APP_VERSION,
+                downloadUrl: cached.downloadUrl || SCRIPT_UPDATE_DOWNLOAD_URL,
+                fromCache: true
+            };
+        }
+
+        const cacheBuster = Math.floor(now / 300000);
+        const sources = [
+            { metaUrl: `${SCRIPT_UPDATE_META_URL}?t=${cacheBuster}`, downloadUrl: SCRIPT_UPDATE_DOWNLOAD_URL },
+            { metaUrl: `${SCRIPT_UPDATE_CDN_META_URL}?t=${cacheBuster}`, downloadUrl: `https://cdn.jsdelivr.net/gh/thevipsong/115-av-dedup-helper@main/115-av-dedup-helper.user.js` }
+        ];
+
+        let remoteVer = '';
+        let matchedDownloadUrl = SCRIPT_UPDATE_DOWNLOAD_URL;
+        for (const src of sources) {
+            const res = await gmFetchText(src.metaUrl, '', { timeoutMs: 6500 });
+            if (res && res.html) {
+                const ver = parseUserscriptVersionFromMeta(res.html);
+                if (ver) {
+                    remoteVer = ver;
+                    matchedDownloadUrl = src.downloadUrl;
+                    break;
+                }
+            }
+        }
+
+        if (!remoteVer) {
+            if (cached && cached.latestVersion) {
+                return {
+                    hasUpdate: compareSemver(cached.latestVersion, APP_VERSION) > 0,
+                    latestVersion: cached.latestVersion,
+                    currentVersion: APP_VERSION,
+                    downloadUrl: cached.downloadUrl || SCRIPT_UPDATE_DOWNLOAD_URL,
+                    error: true
+                };
+            }
+            return { hasUpdate: false, latestVersion: APP_VERSION, currentVersion: APP_VERSION, downloadUrl: SCRIPT_UPDATE_DOWNLOAD_URL, error: true };
+        }
+
+        gmSetValue(SCRIPT_UPDATE_CACHE_KEY, { latestVersion: remoteVer, downloadUrl: matchedDownloadUrl, checkedAt: now });
+        return {
+            hasUpdate: compareSemver(remoteVer, APP_VERSION) > 0,
+            latestVersion: remoteVer,
+            currentVersion: APP_VERSION,
+            downloadUrl: matchedDownloadUrl,
+            fromCache: false
+        };
+    }
+
+    function openScriptUpdateInstall(downloadUrl) {
+        const target = sanitizeHttpUrl(downloadUrl) || SCRIPT_UPDATE_DOWNLOAD_URL;
+        if (typeof window !== 'undefined' && target) {
+            window.open(target, '_blank', 'noopener');
+        }
+    }
+
+    function syncDashboardUpdateUI(info) {
+        if (typeof document === 'undefined' || !info) return;
+        const updatePill = document.getElementById('dedup-update-pill');
+        if (updatePill) {
+            if (info.hasUpdate) {
+                updatePill.style.display = 'inline-flex';
+                updatePill.textContent = `发现新版 v${info.latestVersion} · 点击升级`;
+                updatePill.dataset.downloadUrl = info.downloadUrl || SCRIPT_UPDATE_DOWNLOAD_URL;
+            } else {
+                updatePill.style.display = 'none';
+            }
+        }
+        const forumPill = document.getElementById('av-forum-update-pill');
+        if (forumPill) {
+            if (info.hasUpdate) {
+                forumPill.style.display = 'flex';
+                forumPill.textContent = `发现新版本 v${info.latestVersion} · 点此一键升级`;
+                forumPill.dataset.downloadUrl = info.downloadUrl || SCRIPT_UPDATE_DOWNLOAD_URL;
+            } else {
+                forumPill.style.display = 'none';
+            }
+        }
+    }
+
     function blobToDataUrl(blob) {
         return new Promise((resolve) => {
             if (!blob || blob.size > 2 * 1024 * 1024 || typeof FileReader === 'undefined') return resolve('');
@@ -2831,6 +2960,9 @@
             }
             syncRecursiveControl();
             runScan(false);
+            if (getSettings().autoCheckUpdate !== false) {
+                checkScriptUpdate({ force: false }).then(syncDashboardUpdateUI);
+            }
             return;
         }
 
@@ -2851,7 +2983,8 @@
                 <div style="padding:12px 24px; border-bottom:1px solid var(--av-border); display:flex; justify-content:space-between; align-items:center; gap:12px;">
                     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                         <span style="display:flex; align-items:center;">${createBrandIconSvg(22)}</span>
-                        <h2 style="margin:0; font-size:15px; font-weight:700;">老司机工作台 <span style="font-size:11px; color:var(--av-sky-fg); background:var(--av-sky-bg); border:1px solid var(--av-sky-border); padding:2px 7px; border-radius:4px; font-weight:600;">v${APP_VERSION}</span></h2>
+                        <h2 style="margin:0; font-size:15px; font-weight:700;">老司机工作台 <span id="dedup-version-badge" title="点击立即检查版本更新" style="font-size:11px; color:var(--av-sky-fg); background:var(--av-sky-bg); border:1px solid var(--av-sky-border); padding:2px 7px; border-radius:4px; font-weight:600; cursor:pointer;">v${APP_VERSION}</span></h2>
+                        <button id="dedup-update-pill" style="display:none; font-size:11px; color:var(--av-amber-fg); background:var(--av-amber-bg); border:1px solid var(--av-amber-border); padding:2px 9px; border-radius:999px; font-weight:700; cursor:pointer; align-items:center; gap:4px;" title="点击打开油猴安装/升级确认页"></button>
                         <div id="dedup-cid-box" class="av-subsurface" style="display:inline-flex; align-items:center; gap:6px; padding:3px 8px; border-radius:6px; border:1px solid var(--av-border); font-size:12px; color:var(--av-text-muted); font-family:ui-monospace, monospace; cursor:pointer; user-select:none;" title="点击复制当前目录 CID">
                             <span>CID: <span id="dedup-folder-info">-</span></span>
                             <span id="dedup-cid-copy-icon" style="display:inline-flex; align-items:center;">${ICONS.copy}</span>
@@ -3018,14 +3151,41 @@
         });
 
         document.getElementById('dedup-cid-box').onclick = () => {
-            navigator.clipboard.writeText(getCurrentCid()).then(() => {
+            copyTextToClipboard(getCurrentCid()).then((ok) => {
+                if (!ok) return;
                 const iconSpan = document.getElementById('dedup-cid-copy-icon');
                 if (iconSpan) {
-                    iconSpan.innerHTML = ICONS.check; iconSpan.style.color = '#10b981';
+                    iconSpan.innerHTML = ICONS.check; iconSpan.style.color = 'var(--av-green-fg)';
                     setTimeout(() => { iconSpan.innerHTML = ICONS.copy; iconSpan.style.color = ''; }, 1500);
                 }
-            }).catch(() => {});
+            });
         };
+
+        const verBadge = document.getElementById('dedup-version-badge');
+        if (verBadge) {
+            verBadge.onclick = async () => {
+                const origTxt = verBadge.innerText;
+                verBadge.innerText = '检查中...';
+                const info = await checkScriptUpdate({ force: true });
+                verBadge.innerText = origTxt;
+                syncDashboardUpdateUI(info);
+                if (info.hasUpdate) {
+                    const go = await uiConfirm(`检测到新版本 v${info.latestVersion}（当前 v${APP_VERSION}）。\n点击「立即升级」将打开油猴安装确认页，1 键完成原地升级。`, '发现新版本', false, 'info');
+                    if (go) openScriptUpdateInstall(info.downloadUrl);
+                } else if (info.error) {
+                    await uiAlert('检查更新失败，请检查网络连接（Raw GitHub / jsDelivr）后重试。', '检查更新异常', 'alert');
+                } else {
+                    await uiAlert(`当前版本 v${APP_VERSION} 已是最新！`, '版本检查', 'info');
+                }
+            };
+        }
+        const updatePillBtn = document.getElementById('dedup-update-pill');
+        if (updatePillBtn) {
+            updatePillBtn.onclick = () => openScriptUpdateInstall(updatePillBtn.dataset.downloadUrl);
+        }
+        if (getSettings().autoCheckUpdate !== false) {
+            checkScriptUpdate({ force: false }).then(syncDashboardUpdateUI);
+        }
 
         syncRecursiveControl();
         document.getElementById('chk-recursive').onchange = (e) => {
@@ -3904,7 +4064,7 @@
         const chkPage = document.getElementById('chk-select-page');
         const hasChecked = selectedFids.size > 0;
 
-        if (countEl) { countEl.innerText = selectedFids.size; countEl.style.color = hasChecked ? '#e11d48' : 'var(--av-text-soft)'; }
+        if (countEl) { countEl.innerText = selectedFids.size; countEl.style.color = hasChecked ? 'var(--av-rose-fg)' : 'var(--av-text-soft)'; }
         if (sizeEl) { sizeEl.innerText = formatSize(totalSize); sizeEl.style.color = hasChecked ? 'var(--av-text)' : 'var(--av-text-soft)'; }
 
         const visibleChks = Array.from(document.querySelectorAll('#dedup-content .file-chk'));
@@ -4117,6 +4277,16 @@
                         </div>
                         <button id="set-clear-cache" style="background:var(--av-rose-bg); color:var(--av-rose-fg); border:1px solid var(--av-rose-border); padding:6px 12px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">清空缓存</button>
                     </div>
+
+                    <div class="av-modal-surface" style="border:1px solid var(--av-border); border-radius:8px; padding:14px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                        <div>
+                            <div style="font-size:13px; font-weight:700;">8. 脚本自动更新 (当前 v${APP_VERSION})</div>
+                            <div style="display:flex; align-items:center; gap:10px; margin-top:6px; font-size:12px; color:var(--av-text-secondary);">
+                                <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" id="set-auto-update" ${settings.autoCheckUpdate !== false ? 'checked' : ''}> 打开时自动检查 GitHub 新版本并提示升级</label>
+                            </div>
+                        </div>
+                        <button id="set-check-update" style="background:var(--av-sky-bg); color:var(--av-sky-fg); border:1px solid var(--av-sky-border); padding:6px 12px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;">立即检查更新</button>
+                    </div>
                 </div>
                 <div style="padding:14px 24px; border-top:1px solid var(--av-border); display:flex; justify-content:flex-end; gap:10px;">
                     <button id="set-cancel" class="av-input" style="padding:7px 16px; border-radius:6px; font-size:13px; cursor:pointer;">取消</button>
@@ -4154,6 +4324,24 @@
             await uiAlert('所有本地目录扫描与海报缓存已清空！', '缓存已清空', 'info');
         };
 
+        overlay.querySelector('#set-check-update').onclick = async () => {
+            const btn = overlay.querySelector('#set-check-update');
+            btn.disabled = true;
+            btn.textContent = '检查中...';
+            const info = await checkScriptUpdate({ force: true });
+            btn.disabled = false;
+            btn.textContent = '立即检查更新';
+            syncDashboardUpdateUI(info);
+            if (info.hasUpdate) {
+                const go = await uiConfirm(`检测到新版本 v${info.latestVersion}（当前 v${APP_VERSION}）。\n点击「立即升级」将打开油猴安装确认页，1 键完成升级。`, '发现新版本', false, 'info');
+                if (go) openScriptUpdateInstall(info.downloadUrl);
+            } else if (info.error) {
+                await uiAlert('检查更新失败，请检查网络连接（Raw GitHub / jsDelivr）后重试。', '检查更新异常', 'alert');
+            } else {
+                await uiAlert(`当前版本 v${APP_VERSION} 已是最新！`, '检查更新', 'info');
+            }
+        };
+
         overlay.querySelector('#set-save').onclick = () => {
             const parseList = (str) => str.split(/[\r\n,，]+/).map(s => s.trim()).filter(Boolean);
             saveSettings({
@@ -4162,6 +4350,7 @@
                 syncSubtitles: overlay.querySelector('#set-sync-sub').checked,
                 preferredSearchSite: overlay.querySelector('#set-search-site').value,
                 posterPriority: overlay.querySelector('#set-poster-priority').value,
+                autoCheckUpdate: overlay.querySelector('#set-auto-update').checked,
                 theme: overlay.querySelector('#set-theme').value,
                 customPrefixes: parseList(overlay.querySelector('#set-custom-prefixes').value),
                 customBlacklist: parseList(overlay.querySelector('#set-custom-blacklist').value),
@@ -4245,25 +4434,37 @@
         const inputCid = overlay.querySelector('#arc-input-cid');
         const customWrap = overlay.querySelector('#arc-custom-cid-wrap');
 
+        const parseOptions = {
+            customPrefixes: settings.customPrefixes || [],
+            customBlacklist: settings.customBlacklist || []
+        };
+        const setArcRunEnabled = (enabled) => {
+            const btn = overlay.querySelector('#arc-run');
+            if (!btn) return;
+            btn.disabled = !enabled;
+            btn.style.opacity = enabled ? '1' : '0.45';
+            btn.style.cursor = enabled ? 'pointer' : 'not-allowed';
+        };
+
         const renderPlan = () => {
             const mode = overlay.querySelector('input[name="arc-mode"]:checked').value;
             customWrap.style.display = mode === 'custom_cid' ? 'block' : 'none';
             const tc = inputCid.value.trim();
-            const buckets = planArchiveBuckets(targetFiles, subtitleFilesList, mode, tc, settings.syncSubtitles);
+            const buckets = planArchiveBuckets(targetFiles, subtitleFilesList, mode, tc, settings.syncSubtitles, parseOptions);
             const sumBox = overlay.querySelector('#arc-summary');
             const totalMoves = Array.from(buckets.values()).reduce((a, b) => a + b.size, 0);
 
             if (mode === 'custom_cid' && (!tc || !/^\d+$/.test(tc) || tc === '0')) {
-                sumBox.innerHTML = '<div style="color:#d97706;">请选择现有目录或输入有效的纯数字目标目录 CID（不支持根目录 0）</div>';
-                overlay.querySelector('#arc-run').disabled = true;
+                sumBox.innerHTML = '<div style="color:var(--av-amber-fg);">请选择现有目录或输入有效的纯数字目标目录 CID（不支持根目录 0）</div>';
+                setArcRunEnabled(false);
                 return;
             }
             if (buckets.size === 0) {
-                sumBox.innerHTML = '<div style="color:#10b981; font-weight:600;">✅ 所选文件均已在对应目标目录中，无需移动！</div>';
-                overlay.querySelector('#arc-run').disabled = true;
+                sumBox.innerHTML = '<div style="color:var(--av-green-fg); font-weight:600;">✅ 所选文件均已在对应目标目录中，无需移动！</div>';
+                setArcRunEnabled(false);
                 return;
             }
-            overlay.querySelector('#arc-run').disabled = false;
+            setArcRunEnabled(true);
             const samples = Array.from(buckets.entries()).slice(0, 8).map(([name, fidSet]) => {
                 if (mode === 'custom_cid') return `<div>📁 目标 CID <b>${escapeHtml(name)}</b> ➔ 集中汇总移入 ${fidSet.size} 个文件</div>`;
                 const exists = existingDirByName.has(name.toLowerCase());
@@ -4281,19 +4482,26 @@
             const mode = overlay.querySelector('input[name="arc-mode"]:checked').value;
             const tc = inputCid.value.trim();
             saveSettings({ archiveMode: mode });
-            const buckets = planArchiveBuckets(targetFiles, subtitleFilesList, mode, tc, settings.syncSubtitles);
+            const buckets = planArchiveBuckets(targetFiles, subtitleFilesList, mode, tc, settings.syncSubtitles, parseOptions);
             close();
 
             const totalFiles = Array.from(buckets.values()).reduce((a, b) => a + b.size, 0);
             let doneCount = 0;
             const movedFidToTarget = new Map();
+            const directNameMap = new Map(allDirectSubfolders.map(d => [String(d.cid), d.n]));
             const prog = showBatchProgressModal('正在智能归档并移动文件...');
 
             try {
                 for (const [folderKey, fidSet] of buckets.entries()) {
                     const fids = Array.from(fidSet);
                     if (prog.isAborted()) throw new Error(`已手动中止 (已完成移动 ${doneCount}/${totalFiles})`);
+                    const existedBefore = mode !== 'custom_cid' && existingDirByName.has(folderKey.toLowerCase());
                     let targetCid = mode === 'custom_cid' ? folderKey : await ensureFolderCid(startCid, folderKey, existingDirByName);
+                    if (mode !== 'custom_cid' && !existedBefore && !directNameMap.has(String(targetCid))) {
+                        const newDirObj = { cid: String(targetCid), pid: startCid, n: folderKey, t: '', path: `/${folderKey}`, fileCount: 0, subfolders: [] };
+                        allDirectSubfolders.push(newDirObj);
+                        directNameMap.set(String(targetCid), folderKey);
+                    }
                     prog.update(doneCount, totalFiles, `正在移动到目标目录 (${folderKey})...`);
                     const done = await moveFiles(fids, targetCid, (d) => prog.update(doneCount + d, totalFiles, `正在移动到 ${folderKey} (${doneCount + d}/${totalFiles})`), prog);
                     done.forEach(fid => movedFidToTarget.set(String(fid), { targetCid, folderKey }));
@@ -4303,7 +4511,9 @@
                 applyOptimisticFileChange(files => files.map(f => {
                     const m = movedFidToTarget.get(String(f.fid));
                     if (!m) return f;
-                    return { ...f, cid: String(m.targetCid), relPath: mode === 'custom_cid' ? `/CID:${m.targetCid}` : `/${m.folderKey}` };
+                    const resolvedFolderName = directNameMap.get(String(m.targetCid));
+                    const nextRel = mode === 'custom_cid' ? (resolvedFolderName ? `/${resolvedFolderName}` : `/CID:${m.targetCid}`) : `/${m.folderKey}`;
+                    return { ...f, cid: String(m.targetCid), relPath: nextRel };
                 }));
                 await uiAlert(`智能归档完成！成功归类移动 ${doneCount} 个文件至 ${buckets.size} 个目标目录。`, '归档成功', 'info');
             } catch (err) {
@@ -4311,7 +4521,10 @@
                 if (movedFidToTarget.size > 0) {
                     applyOptimisticFileChange(files => files.map(f => {
                         const m = movedFidToTarget.get(String(f.fid));
-                        return m ? { ...f, cid: String(m.targetCid), relPath: mode === 'custom_cid' ? `/CID:${m.targetCid}` : `/${m.folderKey}` } : f;
+                        if (!m) return f;
+                        const resolvedFolderName = directNameMap.get(String(m.targetCid));
+                        const nextRel = mode === 'custom_cid' ? (resolvedFolderName ? `/${resolvedFolderName}` : `/CID:${m.targetCid}`) : `/${m.folderKey}`;
+                        return { ...f, cid: String(m.targetCid), relPath: nextRel };
                     }));
                 }
                 await uiAlert(`归档异常或中止: ${err.message}`, '归档提示', 'alert');
@@ -4420,7 +4633,8 @@
         refreshExp();
 
         overlay.querySelector('#exp-copy').onclick = () => {
-            navigator.clipboard.writeText(previewArea.value).then(() => {
+            copyTextToClipboard(previewArea.value).then((ok) => {
+                if (!ok) return;
                 const btn = overlay.querySelector('#exp-copy');
                 btn.innerHTML = `${ICONS.check} 已复制`;
                 setTimeout(() => btn.innerHTML = `${ICONS.copy} 复制全文`, 1500);
@@ -4447,7 +4661,16 @@
             overlay.querySelector('#diff-owned-list').value = res.owned.join('\n');
             overlay.querySelector('#diff-missing-list').value = res.missing.join('\n');
         };
-        overlay.querySelector('#diff-copy-missing').onclick = () => navigator.clipboard.writeText(overlay.querySelector('#diff-missing-list').value);
+        overlay.querySelector('#diff-copy-missing').onclick = () => {
+            copyTextToClipboard(overlay.querySelector('#diff-missing-list').value).then((ok) => {
+                if (!ok) return;
+                const link = overlay.querySelector('#diff-copy-missing');
+                if (link) {
+                    link.textContent = '已复制';
+                    setTimeout(() => { link.textContent = '复制缺失'; }, 1500);
+                }
+            });
+        };
     }
 
     function openHistoryDialog() {
@@ -4807,6 +5030,43 @@
             );
         }
 
+        function populateForumThreadRow(row, cell, { tid, titleAnchor, typeId = '', typeName = '', dateStr = '' }) {
+            const href = titleAnchor ? (titleAnchor.getAttribute('href') || '') : '';
+            const title = titleAnchor ? titleAnchor.textContent.trim() : '';
+            const fullUrl = resolveForumAbsoluteUrl(href, window.location.origin) ||
+                (tid ? `${window.location.origin}/forum.php?mod=viewthread&tid=${tid}` : '');
+
+            const parsed = parseAvFileInfo(title, userSettings);
+            const code = parsed && parsed.code ? parsed.code : '';
+            const isOwned = Boolean(code && ownedCodesSet.has(code));
+
+            row.dataset.avForumTid = tid;
+            row.dataset.avForumTitle = title;
+            row.dataset.avForumUrl = fullUrl;
+            if (typeId) row.dataset.avForumTypeId = typeId;
+            if (typeName) row.dataset.avForumTypeName = typeName;
+            if (dateStr) row.dataset.avForumDate = dateStr.trim();
+            row.dataset.avForumCode = code;
+            row.dataset.avForumOwned = isOwned ? '1' : '0';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'av-forum-ckb';
+            checkbox.addEventListener('change', () => {
+                row.classList.toggle('av-forum-selected', checkbox.checked);
+                updatePanelStats();
+            });
+            cell.appendChild(checkbox);
+
+            if (titleAnchor && !row.querySelector('.av-forum-owned-badge') && isOwned) {
+                const badge = document.createElement('span');
+                badge.className = 'av-forum-owned-badge';
+                badge.title = `115网盘中已存在 ${code}`;
+                badge.textContent = '115已有';
+                titleAnchor.after(badge);
+            }
+        }
+
         function syncForumRows() {
             if (mode === 1) {
                 const table = document.querySelector('table#threadlisttableid');
@@ -4834,45 +5094,20 @@
                         const titleAnchor = findThreadTitleAnchor(row);
                         const href = titleAnchor ? (titleAnchor.getAttribute('href') || '') : '';
                         const tid = extractTidFromHref(href, parentId);
-                        const title = titleAnchor ? titleAnchor.textContent.trim() : '';
-                        const fullUrl = resolveForumAbsoluteUrl(href, window.location.origin) ||
-                            (tid ? `${window.location.origin}/forum.php?mod=viewthread&tid=${tid}` : '');
-
                         const typeAnchor = row.querySelector('th em a');
                         const typeHref = typeAnchor ? (typeAnchor.getAttribute('href') || '') : '';
                         const typeIdMatch = typeHref.match(/[?&]typeid=(\d+)/);
-                        const dateStr = row.querySelector('td.by em span span')?.getAttribute('title') ||
+                        const dateStr = row.querySelector('td.by em span[title]')?.getAttribute('title') ||
+                            row.querySelector('td.by em [title]')?.getAttribute('title') ||
                             row.querySelector('td.by em')?.textContent || '';
 
-                        const parsed = parseAvFileInfo(title, userSettings);
-                        const code = parsed && parsed.code ? parsed.code : '';
-                        const isOwned = Boolean(code && ownedCodesSet.has(code));
-
-                        row.dataset.avForumTid = tid;
-                        row.dataset.avForumTitle = title;
-                        row.dataset.avForumUrl = fullUrl;
-                        row.dataset.avForumTypeId = typeIdMatch ? typeIdMatch[1] : '';
-                        row.dataset.avForumTypeName = typeAnchor ? typeAnchor.textContent.trim() : '';
-                        row.dataset.avForumDate = dateStr.trim();
-                        row.dataset.avForumCode = code;
-                        row.dataset.avForumOwned = isOwned ? '1' : '0';
-
-                        const checkbox = document.createElement('input');
-                        checkbox.type = 'checkbox';
-                        checkbox.className = 'av-forum-ckb';
-                        checkbox.addEventListener('change', () => {
-                            row.classList.toggle('av-forum-selected', checkbox.checked);
-                            updatePanelStats();
+                        populateForumThreadRow(row, cell, {
+                            tid,
+                            titleAnchor,
+                            typeId: typeIdMatch ? typeIdMatch[1] : '',
+                            typeName: typeAnchor ? typeAnchor.textContent.trim() : '',
+                            dateStr
                         });
-                        cell.appendChild(checkbox);
-
-                        if (titleAnchor && !row.querySelector('.av-forum-owned-badge') && isOwned) {
-                            const badge = document.createElement('span');
-                            badge.className = 'av-forum-owned-badge';
-                            badge.title = `115网盘中已存在 ${code}`;
-                            badge.textContent = '115已有';
-                            titleAnchor.after(badge);
-                        }
                     }
                     row.prepend(cell);
                 });
@@ -4901,35 +5136,7 @@
                         const href = titleAnchor ? (titleAnchor.getAttribute('href') || '') : '';
                         const tid = extractTidFromHref(href);
                         if (tid) {
-                            const title = titleAnchor ? titleAnchor.textContent.trim() : '';
-                            const fullUrl = resolveForumAbsoluteUrl(href, window.location.origin) ||
-                                `${window.location.origin}/forum.php?mod=viewthread&tid=${tid}`;
-                            const parsed = parseAvFileInfo(title, userSettings);
-                            const code = parsed && parsed.code ? parsed.code : '';
-                            const isOwned = Boolean(code && ownedCodesSet.has(code));
-
-                            row.dataset.avForumTid = tid;
-                            row.dataset.avForumTitle = title;
-                            row.dataset.avForumUrl = fullUrl;
-                            row.dataset.avForumCode = code;
-                            row.dataset.avForumOwned = isOwned ? '1' : '0';
-
-                            const checkbox = document.createElement('input');
-                            checkbox.type = 'checkbox';
-                            checkbox.className = 'av-forum-ckb';
-                            checkbox.addEventListener('change', () => {
-                                row.classList.toggle('av-forum-selected', checkbox.checked);
-                                updatePanelStats();
-                            });
-                            cell.appendChild(checkbox);
-
-                            if (titleAnchor && !row.querySelector('.av-forum-owned-badge') && isOwned) {
-                                const badge = document.createElement('span');
-                                badge.className = 'av-forum-owned-badge';
-                                badge.title = `115网盘中已存在 ${code}`;
-                                badge.textContent = '115已有';
-                                titleAnchor.after(badge);
-                            }
+                            populateForumThreadRow(row, cell, { tid, titleAnchor });
                         }
                     }
                     row.prepend(cell);
@@ -5221,6 +5428,7 @@
                     <button id="av-forum-collapse-btn" title="折叠面板" style="border:1px solid #cbd5e1;background:#f8fafc;color:#475569;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:11px;">收起</button>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:6px;">
+                    <button id="av-forum-update-pill" class="av-forum-btn" style="display:none;background:#fef3c7;color:#92400e;border-color:#fde68a;font-size:11px;padding:5px 8px;" title="点击打开油猴一键升级"></button>
                     <button id="av-forum-extract-links" class="av-forum-btn av-forum-btn-success">提取全部磁力/ed2k</button>
                     <div class="av-forum-btn-grid">
                         <button id="av-forum-select-all" class="av-forum-btn av-forum-btn-neutral">全选/清空</button>
@@ -5238,6 +5446,9 @@
 
             document.body.appendChild(panel);
 
+            panel.querySelector('#av-forum-update-pill').addEventListener('click', (e) => {
+                openScriptUpdateInstall(e.currentTarget.dataset.downloadUrl);
+            });
             panel.querySelector('#av-forum-collapse-btn').addEventListener('click', () => {
                 state.collapsed = true;
                 saveForumState();
@@ -5286,15 +5497,27 @@
         }
         renderPanel();
         updatePanelStats();
+        if (userSettings.autoCheckUpdate !== false) {
+            checkScriptUpdate({ force: false }).then(syncDashboardUpdateUI);
+        }
 
-        // 监听 Discuz 下一页 / 加载更多新主题
-        const handleLazyAppend = () => {
-            setTimeout(() => {
-                syncForumRows();
-            }, 1500);
-        };
+        // 监听 Discuz 下一页 / 新回帖提示动态加载的新主题行
+        const targetTable = mode === 1 ? mode1Table : mode2Table;
+        if (targetTable && typeof MutationObserver !== 'undefined') {
+            let syncTimer = null;
+            let isSyncing = false;
+            const obs = new MutationObserver(() => {
+                if (isSyncing) return;
+                if (syncTimer) clearTimeout(syncTimer);
+                syncTimer = setTimeout(() => {
+                    isSyncing = true;
+                    try { syncForumRows(); } finally { isSyncing = false; }
+                }, 150);
+            });
+            obs.observe(targetTable, { childList: true, subtree: true });
+        }
         document.querySelectorAll('a.bm_h, tbody#forumnewshow a').forEach(btn => {
-            btn.addEventListener('click', handleLazyAppend);
+            btn.addEventListener('click', () => setTimeout(syncForumRows, 1200));
         });
 
         window.addEventListener('beforeunload', saveForumState);
@@ -5361,7 +5584,9 @@
             parseJavDbHtml,
             parseAvsoxHtml,
             parseJav321Html,
-            buildPosterFetchPlan
+            buildPosterFetchPlan,
+            compareSemver,
+            parseUserscriptVersionFromMeta
         };
     }
 })();

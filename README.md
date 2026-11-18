@@ -8,7 +8,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Supported-green.svg)](https://www.tampermonkey.net/)
-[![Version](https://img.shields.io/badge/Version-5.2.1-blue.svg)](https://github.com/thevipsong/115-av-dedup-helper)
+[![Version](https://img.shields.io/badge/Version-5.3.0-blue.svg)](https://github.com/thevipsong/115-av-dedup-helper)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/thevipsong/115-av-dedup-helper/pulls)
 
 [核心特性](#-核心特性) • [界面预览](#-界面预览) • [安装方式](#-安装指南) • [使用教程](#-使用教程) • [版本记录](#-版本演进记录) • [免责声明](#-免责声明)
@@ -184,6 +184,21 @@ node --test tests/parser.test.js
 ---
 
 ## 📑 版本演进记录
+
+### v5.3.0 (自动检查更新与 `.meta.js` 极速推送升级通道)
+- **🔄 双通道自动更新机制**：
+  - 新增轻量级 [`115-av-dedup-helper.meta.js`](./115-av-dedup-helper.meta.js) 元信息文件并配置 `@updateURL` / `@downloadURL`，支持 Tampermonkey / Violentmonkey 后台定时自动检查与更新推送；
+  - 内置 **应用内版本检测引擎**：在 115 工作台或 98 堂面板打开时自动比对 GitHub Raw 与 jsDelivr 双镜像的最新版本号（默认 2 小时节流），一旦检测到新版本，顶栏与论坛面板立即显示 **【发现新版 · 点击升级】** 胶囊按钮，点击直达油猴 1 键原地升级页，也可随时点击顶栏版本号或设置中的 **【立即检查更新】** 手动检测。
+
+### v5.2.2 (全量 Bug 修复与体验优化)
+- **🐛 核心 Bug 修复**：
+  - **防止单位数番号误判分集**：修复 `ABP-5`、`RED-1` 等单位数作品被 `parseAvFileInfo` 末尾正则误判为 `PART5` / `PART1` 的缺陷；
+  - **归档字幕自定义前缀同步**：修复 `planArchiveBuckets` 未传入 `customPrefixes`/`customBlacklist` 导致自定义前缀影片归档漏带外挂字幕的问题；
+  - **连续归档即时同步子目录**：归档新建子目录后立即写入内存子目录列表并回填真实目录名称；
+  - **论坛中文相对时间筛选修复**：修正 Discuz `td.by em span[title]` 选择器遗漏，并新增对「刚刚 / 分钟前 / 小时前 / 昨天 / 前天 / N 天前」的本地日历解析；
+  - **剪贴板兼容与暗色视觉细节**：导出/复制 CID/缺失列表统一接入 `copyTextToClipboard` 多重降级链路，消除非聚焦场景静默失败；修复选中统计红字与归档按钮禁用视觉反馈。
+- **⚡ 代码结构与动态加载优化**：
+  - 使用去抖 `MutationObserver` 自动感知 Discuz 翻页/新帖异步加载，取代固定超时等待；抽取论坛行绑定公共逻辑消除重复代码。
 
 ### v5.2.1 (论坛面板精简优化)
 - **🧹 精简 98堂/色花堂 悬浮控制面板**：移除「复制已选/全部帖子链接」「复制帖子链接附带标题」「再复制上次」「开启/关闭图文预览」四项低频控件，保留「提取全部/已选磁力/ed2k」核心按钮与「全选/清空」「仅勾未拥有」「下载附件开关」「隐藏/显示提示框」四格极简操作组，面板更轻量专注，免除列表自动抓图带来的请求负担。

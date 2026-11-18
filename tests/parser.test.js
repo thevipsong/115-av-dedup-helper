@@ -1,3 +1,5 @@
+const fs = require('node:fs');
+const path = require('node:path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
@@ -35,11 +37,13 @@ const {
     parseJavDbHtml,
     parseAvsoxHtml,
     parseJav321Html,
-    buildPosterFetchPlan
+    buildPosterFetchPlan,
+    compareSemver,
+    parseUserscriptVersionFromMeta
 } = require('../115-av-dedup-helper.user.js');
 
 test('版本号导出校验', () => {
-    assert.equal(APP_VERSION, '5.2.1');
+    assert.equal(APP_VERSION, '5.3.0');
 });
 
 test('标准有码、特异片商及自定义前缀/屏蔽词识别', () => {
@@ -71,7 +75,7 @@ test('FC2 与无码特殊格式识别', () => {
     assert.equal(parseAvFileInfo('tokyo-hot-k1234.mkv').code, 'TOKYO-HOT-1234');
 });
 
-test('分集独立保护（绝不误判上下集为重复）', () => {
+test('分集独立保护（绝不误判上下集为重复，且不误判单位数编号为分集）', () => {
     const p1 = parseAvFileInfo('SVVRT-084-CD1.mp4');
     const p2 = parseAvFileInfo('SVVRT-084-CD2.mp4');
     assert.equal(p1.dedupKey, 'SVVRT-084 [PART1]');
@@ -79,6 +83,9 @@ test('分集独立保护（绝不误判上下集为重复）', () => {
     assert.notEqual(p1.dedupKey, p2.dedupKey);
     assert.equal(parseAvFileInfo('IPX-100_上集.mp4').part, 'PART1');
     assert.equal(parseAvFileInfo('IPX-100_下集.mp4').part, 'PART3');
+    assert.equal(parseAvFileInfo('IPZ-405-2.mp4').part, 'PART2');
+    assert.equal(parseAvFileInfo('ABP-5.mp4').part, '');
+    assert.equal(parseAvFileInfo('RED-1.mp4').part, '');
 });
 
 test('技术黑名单防误识别 & 特征徽章精准提取（不把 Part-C 误标为中字）', () => {
@@ -172,6 +179,11 @@ test('空文件夹父子防双删过滤 + 智能优选保留 + 归档分桶去�
 
     const customBuckets = planArchiveBuckets(targets, subs, 'custom_cid', '999', true);
     assert.equal(customBuckets.get('999').size, 3);
+
+    const customPrefTargets = [{ fid: 'v9', cid: '2', n: 'MYSTUDIO9999.mp4', parsedCode: 'MYSTUDIO-9999', relPath: '/' }];
+    const customPrefSubs = [{ fid: 's9', cid: '2', n: 'MYSTUDIO9999.chs.ass' }];
+    const customPrefBuckets = planArchiveBuckets(customPrefTargets, customPrefSubs, 'prefix', '', true, { customPrefixes: ['MYSTUDIO'] });
+    assert.equal(customPrefBuckets.get('MYSTUDIO').size, 2);
 });
 
 test('筛选排序键、外链 URL、忽略目录及清单补漏对比', () => {
@@ -256,12 +268,20 @@ test('帖子资源提取（代码块磁力/Base32磁力/ed2k/附件大小写与�
     assert.equal(isForumAttachmentHref('forum.php?mod=attachment&aid=1', 'cover.jpg'), false);
 });
 
-test('本地日期时间筛选（防跨时区偏移与无效日期兜底）', () => {
+test('本地日期时间筛选（防跨时区偏移、中文相对时间与无效日期兜底）', () => {
     const now = new Date(2026, 10, 18, 15, 30, 0); // 2026-11-18 local
     assert.equal(filterForumPostByTime('2026-11-18', 1, now), true);
     assert.equal(filterForumPostByTime('2026-11-17', 1, now), false);
     assert.equal(filterForumPostByTime('2026-11-17', 2, now), true);
     assert.equal(filterForumPostByTime('2026-11-16', 2, now), false);
+    assert.equal(filterForumPostByTime('刚刚', 1, now), true);
+    assert.equal(filterForumPostByTime('15 分钟前', 1, now), true);
+    assert.equal(filterForumPostByTime('昨天 22:10', 1, now), false);
+    assert.equal(filterForumPostByTime('昨天 22:10', 2, now), true);
+    assert.equal(filterForumPostByTime('前天 10:00', 2, now), false);
+    assert.equal(filterForumPostByTime('前天 10:00', 3, now), true);
+    assert.equal(filterForumPostByTime('3 天前', 3, now), false);
+    assert.equal(filterForumPostByTime('3 天前', 7, now), true);
     assert.equal(filterForumPostByTime('无效日期', 7, now), false);
 });
 
@@ -350,4 +370,22 @@ test('JavBus / JavDB / AVSOX 高清封面与搜索结果 HTML 解析', () => {
 
     const blocked = parseJavBusHtml('<html><title>Just a moment...</title></html>', 'https://www.javbus.com/IPZ-405', 'IPZ-405');
     assert.equal(blocked.kind, 'blocked');
+});
+
+test('自动更新语义版本比对与 .meta.js 元信息同步校验', () => {
+    assert.equal(compareSemver('5.3.0', '5.2.9'), 1);
+    assert.equal(compareSemver('5.3.1', '5.3.0'), 1);
+    assert.equal(compareSemver('5.3.0', '5.3.0'), 0);
+    assert.equal(compareSemver('5.2.1', '5.3.0'), -1);
+    assert.equal(compareSemver('v5.10.0', '5.3.0'), 1);
+
+    const metaPath = path.join(__dirname, '..', '115-av-dedup-helper.meta.js');
+    const userPath = path.join(__dirname, '..', '115-av-dedup-helper.user.js');
+    const metaText = fs.readFileSync(metaPath, 'utf8').trim();
+    const userText = fs.readFileSync(userPath, 'utf8');
+    const userHeaderMatch = userText.match(/^\/\/ ==UserScript==[\s\S]*?\/\/ ==\/UserScript==/);
+
+    assert.ok(userHeaderMatch, '主脚本应包含完整 UserScript 头部注释');
+    assert.equal(metaText, userHeaderMatch[0].trim(), '.meta.js 必须与 .user.js 头部元信息保持完全一致');
+    assert.equal(parseUserscriptVersionFromMeta(metaText), APP_VERSION);
 });
