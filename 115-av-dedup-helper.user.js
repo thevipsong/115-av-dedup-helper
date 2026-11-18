@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         老司机工作台
 // @namespace    https://github.com/thevipsong/115-av-dedup-helper
-// @version      5.3.0
+// @version      5.3.1
 // @description  老司机工作台：专为115网盘与98堂/色花堂打造的一体化影库整理神器。网盘端支持SHA1同源查重、智能优选、模板重命名、归档提取、自动检索高清海报、夜间模式、清单查漏与Anti-WAF装甲；论坛端支持版块与时间快选、批量提取磁力/ed2k/附件，并跨站自动标记[115已有]，内置自动检查与一键升级。
 // @author       thevipsong
 // @license      MIT
@@ -26,6 +26,11 @@
 // @connect      jav321.com
 // @connect      dmm.co.jp
 // @connect      jdbstatic.com
+// @connect      airav.wiki
+// @connect      123av.com
+// @connect      javtrailers.com
+// @connect      fc2ppvdb.com
+// @connect      fc2cmadb.com
 // @connect      *
 // @run-at       document-end
 // ==/UserScript==
@@ -33,7 +38,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '5.3.0';
+    const APP_VERSION = '5.3.1';
     const SCRIPT_UPDATE_META_URL = 'https://raw.githubusercontent.com/thevipsong/115-av-dedup-helper/main/115-av-dedup-helper.meta.js';
     const SCRIPT_UPDATE_CDN_META_URL = 'https://cdn.jsdelivr.net/gh/thevipsong/115-av-dedup-helper@main/115-av-dedup-helper.meta.js';
     const SCRIPT_UPDATE_DOWNLOAD_URL = 'https://raw.githubusercontent.com/thevipsong/115-av-dedup-helper/main/115-av-dedup-helper.user.js';
@@ -1207,6 +1212,9 @@
         const cleanCode = encodeURIComponent(code);
         if (site === 'javdb') return `https://javdb.com/search?q=${cleanCode}&f=all`;
         if (site === 'avsox') return `https://avsox.click/cn/search/${cleanCode}`;
+        if (site === 'airav') return `https://www.airav.wiki/cn/search?keyword=${cleanCode}`;
+        if (site === '123av') return `https://123av.com/zh/search?keyword=${cleanCode}`;
+        if (site === 'javtrailers') return `https://javtrailers.com/search/${cleanCode}`;
         return `https://www.javbus.com/search/${cleanCode}`;
     }
 
@@ -1530,11 +1538,192 @@
         return { kind: 'none' };
     }
 
+    function isMatchingFc2Code(candidateText, targetCode) {
+        if (isMatchingAvCode(candidateText, targetCode)) return true;
+        const digits = String(targetCode || '').replace(/^FC2[-_ ]*(?:PPV)?[-_ ]*/i, '').replace(/\D+/g, '');
+        if (!digits || digits.length < 5) return false;
+        return new RegExp(`(?:fc2[-_ ]*(?:ppv)?[-_ ]*|\\/articles\\/)${digits}(?!\\d)`, 'i').test(String(candidateText || ''));
+    }
+
+    function parseSiteVideoListingHtml(html, pageUrl, targetCode, opts) {
+        if (isHtmlChallengePage(html)) return { kind: 'blocked' };
+        const raw = String(html || '');
+        const doc = parseDomDoc(raw);
+        const pageUrlStr = String(pageUrl || '');
+        const isDetailPage = opts.detailUrlRe ? opts.detailUrlRe.test(pageUrlStr) : false;
+        const matcher = opts.matchCodeFn || isMatchingAvCode;
+
+        if (doc) {
+            if (isDetailPage) {
+                let posterUrl = '';
+                if (opts.detailImgSelectors) {
+                    for (const el of doc.querySelectorAll(opts.detailImgSelectors)) {
+                        const rawSrc = el.getAttribute('poster') || el.getAttribute('src') || el.getAttribute('data-src') || el.getAttribute('data-original');
+                        posterUrl = resolvePosterUrl(rawSrc, pageUrl);
+                        if (posterUrl) break;
+                    }
+                }
+                if (!posterUrl) posterUrl = parseOgImageFromHtml(raw, pageUrl, doc);
+                if (posterUrl) {
+                    const title = (doc.querySelector(opts.titleSelector || 'h1, h5, .current-title')?.textContent || '').trim();
+                    const dateM = (doc.body?.textContent || raw).match(/\d{4}-\d{2}-\d{2}/);
+                    return {
+                        kind: 'detail',
+                        source: opts.source,
+                        posterUrl,
+                        pageUrl,
+                        title,
+                        date: dateM ? dateM[0] : '',
+                        actors: []
+                    };
+                }
+            }
+
+            if (opts.searchLinkSelector) {
+                for (const a of doc.querySelectorAll(opts.searchLinkSelector)) {
+                    const href = a.getAttribute('href') || '';
+                    if (opts.linkHrefRe && !opts.linkHrefRe.test(href)) continue;
+                    const card = opts.searchCardSelector ? a.closest(opts.searchCardSelector) : null;
+                    const imgEl = a.querySelector('img') || (card ? card.querySelector('img') : null);
+                    const alt = imgEl ? `${imgEl.getAttribute('alt') || ''} ${imgEl.getAttribute('title') || ''}` : '';
+                    const cardText = card ? card.textContent : '';
+                    const candidate = `${a.textContent || ''} ${a.getAttribute('title') || ''} ${alt} ${href} ${cardText}`;
+                    if (!matcher(candidate, targetCode)) continue;
+
+                    const detailUrl = resolvePosterUrl(href, pageUrl);
+                    const thumbSrc = imgEl ? resolvePosterUrl(
+                        imgEl.getAttribute('src') || imgEl.getAttribute('data-src') || imgEl.getAttribute('data-original'),
+                        pageUrl
+                    ) : '';
+                    if (detailUrl) {
+                        return {
+                            kind: 'search_hit',
+                            source: opts.source,
+                            detailUrl,
+                            ...(thumbSrc ? { fallbackPosterUrl: thumbSrc } : {})
+                        };
+                    }
+                }
+            }
+            return { kind: 'none' };
+        }
+
+        if (isDetailPage) {
+            const og = parseOgImageFromHtml(raw, pageUrl, null);
+            let selectorPoster = '';
+            if (opts.detailTagRe) {
+                const dm = raw.match(opts.detailTagRe);
+                if (dm) {
+                    selectorPoster = resolvePosterUrl(
+                        parseHtmlAttr(dm[1], 'poster') || parseHtmlAttr(dm[1], 'src') || parseHtmlAttr(dm[1], 'data-src') || parseHtmlAttr(dm[1], 'data-original'),
+                        pageUrl
+                    );
+                }
+            }
+            const posterUrl = selectorPoster || og;
+            if (posterUrl) {
+                const hM = raw.match(/<h[15][^>]*>([\s\S]*?)<\/h[15]>/i);
+                const dateM = raw.match(/\d{4}-\d{2}-\d{2}/);
+                return {
+                    kind: 'detail',
+                    source: opts.source,
+                    posterUrl,
+                    pageUrl,
+                    title: hM ? decodeBasicHtmlEntities(hM[1]) : '',
+                    date: dateM ? dateM[0] : '',
+                    actors: []
+                };
+            }
+        }
+
+        const aRe = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
+        let am;
+        while ((am = aRe.exec(raw)) !== null) {
+            const href = parseHtmlAttr(am[1], 'href');
+            if (!href || (opts.linkHrefRe && !opts.linkHrefRe.test(href))) continue;
+            const titleAttr = parseHtmlAttr(am[1], 'title');
+            const imgM = am[2].match(/<img\b([^>]*)>/i);
+            const imgAlt = imgM ? `${parseHtmlAttr(imgM[1], 'alt')} ${parseHtmlAttr(imgM[1], 'title')}` : '';
+            const candidate = `${decodeBasicHtmlEntities(am[2])} ${titleAttr} ${imgAlt} ${href}`;
+            if (!matcher(candidate, targetCode)) continue;
+
+            const detailUrl = resolvePosterUrl(href, pageUrl);
+            const thumbSrc = imgM ? resolvePosterUrl(
+                parseHtmlAttr(imgM[1], 'src') || parseHtmlAttr(imgM[1], 'data-src') || parseHtmlAttr(imgM[1], 'data-original'),
+                pageUrl
+            ) : '';
+            if (detailUrl) {
+                return {
+                    kind: 'search_hit',
+                    source: opts.source,
+                    detailUrl,
+                    ...(thumbSrc ? { fallbackPosterUrl: thumbSrc } : {})
+                };
+            }
+        }
+        return { kind: 'none' };
+    }
+
+    function parseAiravHtml(html, pageUrl, targetCode) {
+        return parseSiteVideoListingHtml(html, pageUrl, targetCode, {
+            source: 'AirAV',
+            detailUrlRe: /\/video\//i,
+            detailImgSelectors: 'video[poster], .video-cover img, .cover img, .video-info img',
+            detailTagRe: /<(?:video|img)\b([^>]*(?:\bposter=|class=["'][^"']*(?:video-cover|cover)[^"']*["'])[^>]*)>/i,
+            searchLinkSelector: 'a[href*="/video/"]',
+            searchCardSelector: '.oneVideo, .video-item, .card',
+            linkHrefRe: /\/video\//i,
+            titleSelector: 'h1, h5'
+        });
+    }
+
+    function parse123AvHtml(html, pageUrl, targetCode) {
+        return parseSiteVideoListingHtml(html, pageUrl, targetCode, {
+            source: '123AV',
+            detailUrlRe: /\/(?:v|movie)\/[A-Za-z0-9_-]+/i,
+            detailImgSelectors: 'video[poster], .detail-poster img, img.poster, .poster img',
+            detailTagRe: /<(?:video|img)\b([^>]*(?:\bposter=|class=["'][^"']*(?:detail-poster|poster)[^"']*["'])[^>]*)>/i,
+            searchLinkSelector: 'a[href*="/v/"], a[href*="/movie/"]',
+            searchCardSelector: '.box-item, .item, .video-item, .col',
+            linkHrefRe: /\/(?:v|movie)\/[A-Za-z0-9_-]+/i,
+            matchCodeFn: /FC2/i.test(String(targetCode || '')) ? isMatchingFc2Code : isMatchingAvCode,
+            titleSelector: 'h1, .detail-title'
+        });
+    }
+
+    function parseJavTrailersHtml(html, pageUrl, targetCode) {
+        return parseSiteVideoListingHtml(html, pageUrl, targetCode, {
+            source: 'JavTrailers',
+            detailUrlRe: /\/video\/[A-Za-z0-9_-]+/i,
+            detailImgSelectors: 'video[poster], img.video-cover, .cover-container img, .video-thumb img',
+            detailTagRe: /<(?:video|img)\b([^>]*(?:\bposter=|class=["'][^"']*(?:video-cover|cover)[^"']*["'])[^>]*)>/i,
+            searchLinkSelector: 'a[href*="/video/"]',
+            searchCardSelector: '.card, .video-card, .col',
+            linkHrefRe: /\/video\/[A-Za-z0-9_-]+/i,
+            titleSelector: 'h1, .card-title'
+        });
+    }
+
+    function parseFc2PageHtml(html, pageUrl, targetCode, sourceLabel = 'FC2DB') {
+        return parseSiteVideoListingHtml(html, pageUrl, targetCode, {
+            source: sourceLabel,
+            detailUrlRe: /\/(?:articles\/\d+|fc2-ppv-\d+)/i,
+            detailImgSelectors: '.article-cover img, .entry-content img, .thumbnail img, .video-cover img',
+            detailTagRe: /<img\b([^>]*\bclass=["'][^"']*(?:article-cover|video-cover|thumbnail)[^"']*["'][^>]*)>/i,
+            searchLinkSelector: 'a[href*="/articles/"], a[href*="fc2-ppv"]',
+            searchCardSelector: 'article, .post, .item, .card, li',
+            linkHrefRe: /\/(?:articles\/\d+|fc2-ppv-\d+)/i,
+            matchCodeFn: isMatchingFc2Code,
+            titleSelector: 'h1, h2, .entry-title'
+        });
+    }
+
     function buildPosterFetchPlan(code, preferredSite = 'javbus') {
         const { queryCode, isUncensored, isFc2 } = normalizeSearchCodeForSite(code);
         if (!queryCode) return [];
         const enc = encodeURIComponent(queryCode);
         const encOrig = encodeURIComponent(String(code || '').trim().toUpperCase());
+        const fc2Digits = isFc2 ? queryCode.replace(/^FC2[-_ ]*(?:PPV)?[-_ ]*/i, '').replace(/\D+/g, '') : '';
 
         const siteBuilders = {
             javbus: () => {
@@ -1554,16 +1743,33 @@
                 url: 'https://www.jav321.com/search',
                 body: `sn=${encOrig}`,
                 contentType: 'application/x-www-form-urlencoded'
-            }]
+            }],
+            airav: () => isFc2 ? [] : [{ site: 'airav', kind: 'search', method: 'GET', url: `https://www.airav.wiki/cn/search?keyword=${enc}` }],
+            '123av': () => [{ site: '123av', kind: 'search', method: 'GET', url: `https://123av.com/zh/search?keyword=${isFc2 && fc2Digits ? encodeURIComponent('FC2-PPV-' + fc2Digits) : enc}` }],
+            javtrailers: () => isFc2 ? [] : [{ site: 'javtrailers', kind: 'search', method: 'GET', url: `https://javtrailers.com/search/${enc}` }],
+            fc2ppvdb: () => isFc2 && fc2Digits ? [{ site: 'fc2ppvdb', kind: 'detail', method: 'GET', url: `https://fc2ppvdb.com/articles/${fc2Digits}` }] : [],
+            fc2cmadb: () => isFc2 && fc2Digits ? [{ site: 'fc2cmadb', kind: 'search', method: 'GET', url: `https://fc2cmadb.com/?s=${encodeURIComponent('FC2-PPV-' + fc2Digits)}` }] : []
         };
 
         let order;
         if (isFc2) {
-            order = preferredSite === 'avsox' ? ['avsox', 'javdb'] : ['javdb', 'avsox'];
+            const fc2Priority = ['javdb', 'avsox'];
+            order = [
+                ...(preferredSite === 'avsox' ? ['avsox', 'javdb'] : fc2Priority),
+                'fc2ppvdb',
+                'fc2cmadb',
+                '123av'
+            ];
         } else {
-            const allSites = ['javbus', 'javdb', 'avsox'];
-            const first = allSites.includes(preferredSite) ? preferredSite : 'javbus';
-            order = [first, ...allSites.filter(s => s !== first), 'jav321'];
+            const coreSites = ['javbus', 'javdb', 'avsox'];
+            const extraSites = ['jav321', 'airav', '123av', 'javtrailers'];
+            const allSites = [...coreSites, ...extraSites];
+            if (preferredSite === 'airav' || preferredSite === '123av' || preferredSite === 'javtrailers') {
+                order = [preferredSite, ...allSites.filter(s => s !== preferredSite)];
+            } else {
+                const first = coreSites.includes(preferredSite) ? preferredSite : 'javbus';
+                order = [first, ...coreSites.filter(s => s !== first), ...extraSites];
+            }
         }
 
         const plan = [];
@@ -2393,6 +2599,7 @@
     }
 
     function clearHdPosterCaches() {
+        if (typeof cancelPosterPrefetch === 'function') cancelPosterPrefetch();
         posterMemoryCache.forEach(entry => {
             if (entry && entry.blobUrl && typeof URL !== 'undefined' && URL.revokeObjectURL) {
                 try { URL.revokeObjectURL(entry.blobUrl); } catch (e) {}
@@ -2540,9 +2747,11 @@
         });
     }
 
-    function gmFetchImageAssets(imageUrl, refererUrl, timeoutMs = 10000) {
+    function gmFetchImageAssets(imageUrl, refererUrl, timeoutMs = 6000) {
         return new Promise((resolve) => {
-            if (typeof GM_xmlhttpRequest !== 'function' || !imageUrl) return resolve({ blobUrl: '', dataUrl: '', missing: false });
+            if (typeof GM_xmlhttpRequest !== 'function' || !imageUrl) {
+                return resolve({ blobUrl: '', dataUrl: '', blob: null, missing: false });
+            }
             try {
                 GM_xmlhttpRequest({
                     method: 'GET',
@@ -2555,25 +2764,26 @@
                     timeout: timeoutMs,
                     onload: async (res) => {
                         if (res.status === 404 || res.status === 410 || res.status === 403) {
-                            return resolve({ blobUrl: '', dataUrl: '', missing: true });
+                            return resolve({ blobUrl: '', dataUrl: '', blob: null, missing: true });
                         }
                         const blob = res.response;
                         const mime = String((blob && blob.type) || '').toLowerCase();
                         if (res.status >= 200 && res.status < 300 && blob && blob.size > 2048 && !mime.includes('text/')) {
                             const blobUrl = (typeof URL !== 'undefined' && URL.createObjectURL) ? URL.createObjectURL(blob) : '';
-                            const dataUrl = await blobToDataUrl(blob);
-                            return resolve({ blobUrl, dataUrl, missing: false });
+                            // Defer expensive FileReader base64 conversion unless blob: URL is unavailable or blocked by CSP
+                            const dataUrl = blobUrl ? '' : await blobToDataUrl(blob);
+                            return resolve({ blobUrl, dataUrl, blob: blobUrl ? blob : null, missing: false });
                         }
                         if (res.status >= 200 && res.status < 300 && mime.includes('text/')) {
-                            return resolve({ blobUrl: '', dataUrl: '', missing: true });
+                            return resolve({ blobUrl: '', dataUrl: '', blob: null, missing: true });
                         }
-                        resolve({ blobUrl: '', dataUrl: '', missing: false });
+                        resolve({ blobUrl: '', dataUrl: '', blob: null, missing: false });
                     },
-                    onerror: () => resolve({ blobUrl: '', dataUrl: '', missing: false }),
-                    ontimeout: () => resolve({ blobUrl: '', dataUrl: '', missing: false })
+                    onerror: () => resolve({ blobUrl: '', dataUrl: '', blob: null, missing: false }),
+                    ontimeout: () => resolve({ blobUrl: '', dataUrl: '', blob: null, missing: false })
                 });
             } catch (e) {
-                resolve({ blobUrl: '', dataUrl: '', missing: false });
+                resolve({ blobUrl: '', dataUrl: '', blob: null, missing: false });
             }
         });
     }
@@ -2582,6 +2792,11 @@
         if (site === 'javdb') return parseJavDbHtml(html, pageUrl, code);
         if (site === 'avsox') return parseAvsoxHtml(html, pageUrl, code);
         if (site === 'jav321') return parseJav321Html(html, pageUrl, code);
+        if (site === 'airav') return parseAiravHtml(html, pageUrl, code);
+        if (site === '123av') return parse123AvHtml(html, pageUrl, code);
+        if (site === 'javtrailers') return parseJavTrailersHtml(html, pageUrl, code);
+        if (site === 'fc2ppvdb') return parseFc2PageHtml(html, pageUrl, code, 'FC2PPVDB');
+        if (site === 'fc2cmadb') return parseFc2PageHtml(html, pageUrl, code, 'FC2CMADB');
         return parseJavBusHtml(html, pageUrl, code);
     }
 
@@ -2601,8 +2816,106 @@
             ...detail,
             posterUrl: activeUrl,
             blobUrl: assets.blobUrl || '',
-            dataUrl: assets.dataUrl || ''
+            dataUrl: assets.dataUrl || '',
+            blob: assets.blob || null
         };
+    }
+
+    function raceFirstTruthful(promises) {
+        return new Promise((resolve) => {
+            if (!promises || promises.length === 0) return resolve(null);
+            let settled = false;
+            let remaining = promises.length;
+            for (const p of promises) {
+                Promise.resolve(p).then((val) => {
+                    if (!settled && val) {
+                        settled = true;
+                        resolve(val);
+                        return;
+                    }
+                    remaining--;
+                    if (!settled && remaining <= 0) resolve(null);
+                }, () => {
+                    remaining--;
+                    if (!settled && remaining <= 0) resolve(null);
+                });
+            }
+        });
+    }
+
+    async function raceFirstWithGrace(primaryTasks, backupTasks, graceMs) {
+        if (!primaryTasks.length) return raceFirstTruthful(backupTasks.map(fn => fn()));
+        if (!backupTasks.length) return raceFirstTruthful(primaryTasks.map(fn => fn()));
+
+        let cancelledBackups = false;
+        const primaryRace = raceFirstTruthful(primaryTasks.map(fn => fn()));
+        const trigger = new Promise((resolve) => {
+            const timer = setTimeout(resolve, graceMs);
+            primaryRace.then((res) => {
+                clearTimeout(timer);
+                if (res) cancelledBackups = true;
+                resolve();
+            }, () => {
+                clearTimeout(timer);
+                resolve();
+            });
+        });
+
+        const delayedBackups = backupTasks.map(async (fn) => {
+            await trigger;
+            if (cancelledBackups) return null;
+            return fn();
+        });
+
+        const winner = await raceFirstTruthful([primaryRace, ...delayedBackups]);
+        cancelledBackups = true;
+        return winner;
+    }
+
+    async function runPosterSitePipeline(siteSteps, cleanCode) {
+        for (const step of siteSteps) {
+            const page = await gmFetchText(step.url, '', {
+                method: step.method || 'GET',
+                body: step.body,
+                contentType: step.contentType,
+                timeoutMs: 4500
+            });
+            if (!page) continue;
+
+            const parsed = parseSiteHtmlByName(step.site, page.html, page.finalUrl || step.url, cleanCode);
+            if (parsed.kind === 'blocked') return null;
+
+            let candidate = null;
+            if (parsed.kind === 'detail') {
+                candidate = parsed;
+            } else if (parsed.kind === 'search_hit') {
+                const detailPage = await gmFetchText(parsed.detailUrl, page.finalUrl || step.url, { timeoutMs: 4000 });
+                if (detailPage) {
+                    const detailParsed = parseSiteHtmlByName(step.site, detailPage.html, detailPage.finalUrl || parsed.detailUrl, cleanCode);
+                    if (detailParsed.kind === 'detail') {
+                        candidate = { ...detailParsed, altThumbUrl: parsed.altThumbUrl || '' };
+                    }
+                }
+                if (!candidate && (parsed.fallbackPosterUrl || parsed.altThumbUrl)) {
+                    candidate = {
+                        kind: 'detail',
+                        source: parsed.source,
+                        posterUrl: parsed.fallbackPosterUrl || parsed.altThumbUrl,
+                        altThumbUrl: parsed.altThumbUrl || '',
+                        pageUrl: parsed.detailUrl,
+                        title: '',
+                        date: '',
+                        actors: []
+                    };
+                }
+            }
+
+            if (candidate && candidate.posterUrl) {
+                const hydrated = await tryHydratePosterResult(candidate);
+                if (hydrated) return hydrated;
+            }
+        }
+        return null;
     }
 
     async function getHdPosterForCode(code, settings = {}) {
@@ -2629,69 +2942,44 @@
                     }
                 }
 
-                // 2. 按优先级策略依次自动检索高清封面
+                // 2. 分站分组后阶梯竞速检索高清封面（首选站点微领先 + 多源并行容灾）
                 const plan = buildPosterFetchPlan(cleanCode, settings.preferredSearchSite || 'javbus');
-                const blockedSites = new Set();
-
+                const siteOrder = [];
+                const siteStepsMap = new Map();
                 for (const step of plan) {
-                    if (blockedSites.has(step.site)) continue;
-                    const page = await gmFetchText(step.url, '', {
-                        method: step.method || 'GET',
-                        body: step.body,
-                        contentType: step.contentType
-                    });
-                    if (!page) continue;
-
-                    const parsed = parseSiteHtmlByName(step.site, page.html, page.finalUrl || step.url, cleanCode);
-                    if (parsed.kind === 'blocked') {
-                        blockedSites.add(step.site);
-                        continue;
+                    if (!siteStepsMap.has(step.site)) {
+                        siteOrder.push(step.site);
+                        siteStepsMap.set(step.site, []);
                     }
+                    siteStepsMap.get(step.site).push(step);
+                }
 
-                    let candidate = null;
-                    if (parsed.kind === 'detail') {
-                        candidate = parsed;
-                    } else if (parsed.kind === 'search_hit') {
-                        const detailPage = await gmFetchText(parsed.detailUrl, page.finalUrl || step.url);
-                        if (detailPage) {
-                            const detailParsed = parseSiteHtmlByName(step.site, detailPage.html, detailPage.finalUrl || parsed.detailUrl, cleanCode);
-                            if (detailParsed.kind === 'detail') {
-                                candidate = { ...detailParsed, altThumbUrl: parsed.altThumbUrl || '' };
-                            }
-                        }
-                        if (!candidate && (parsed.fallbackPosterUrl || parsed.altThumbUrl)) {
-                            candidate = {
-                                kind: 'detail',
-                                source: parsed.source,
-                                posterUrl: parsed.fallbackPosterUrl || parsed.altThumbUrl,
-                                altThumbUrl: parsed.altThumbUrl || '',
-                                pageUrl: parsed.detailUrl,
-                                title: '',
-                                date: '',
-                                actors: []
-                            };
-                        }
-                    }
+                const makeSiteTask = (siteName) => () => runPosterSitePipeline(siteStepsMap.get(siteName) || [], cleanCode);
+                const wave1Sites = siteOrder.slice(0, 3);
+                const wave2Tasks = siteOrder.slice(3).map(makeSiteTask);
 
-                    if (candidate && candidate.posterUrl) {
-                        const hydrated = await tryHydratePosterResult(candidate);
-                        if (hydrated) {
-                            const metaToSave = {
-                                posterUrl: hydrated.posterUrl,
-                                altThumbUrl: hydrated.altThumbUrl || '',
-                                pageUrl: hydrated.pageUrl || '',
-                                source: hydrated.source || step.site,
-                                title: hydrated.title || '',
-                                date: hydrated.date || '',
-                                actors: Array.isArray(hydrated.actors) ? hydrated.actors : []
-                            };
-                            setPosterMemoryCache(cleanCode, hydrated);
-                            if (settings.enableCache !== false) {
-                                CacheManager.set(`poster_meta:${cleanCode}`, metaToSave).catch(() => {});
-                            }
-                            return hydrated;
-                        }
+                const wave1Runner = () => raceFirstWithGrace(
+                    [makeSiteTask(wave1Sites[0])],
+                    wave1Sites.slice(1).map(makeSiteTask),
+                    180
+                );
+
+                const winner = await raceFirstWithGrace([wave1Runner], wave2Tasks, 1400);
+                if (winner) {
+                    const metaToSave = {
+                        posterUrl: winner.posterUrl,
+                        altThumbUrl: winner.altThumbUrl || '',
+                        pageUrl: winner.pageUrl || '',
+                        source: winner.source || '',
+                        title: winner.title || '',
+                        date: winner.date || '',
+                        actors: Array.isArray(winner.actors) ? winner.actors : []
+                    };
+                    setPosterMemoryCache(cleanCode, winner);
+                    if (settings.enableCache !== false) {
+                        CacheManager.set(`poster_meta:${cleanCode}`, metaToSave).catch(() => {});
                     }
+                    return winner;
                 }
 
                 posterNegativeCache.set(cleanCode, Date.now());
@@ -2705,15 +2993,68 @@
         return task;
     }
 
+    let posterPrefetchGen = 0;
+
+    function cancelPosterPrefetch() {
+        posterPrefetchGen++;
+    }
+
+    function schedulePosterPrefetch(codes, settings = {}) {
+        cancelPosterPrefetch();
+        if (!codes || codes.length === 0 || settings.posterPriority === 'off') return;
+
+        const queue = [];
+        const seen = new Set();
+        const now = Date.now();
+        for (const rawCode of codes) {
+            const c = String(rawCode || '').trim().toUpperCase();
+            if (!c || seen.has(c)) continue;
+            seen.add(c);
+            if (posterMemoryCache.has(c) || posterInflight.has(c)) continue;
+            const negTs = posterNegativeCache.get(c);
+            if (negTs && (now - negTs < POSTER_NEGATIVE_TTL_MS)) continue;
+            queue.push(c);
+            if (queue.length >= 10) break;
+        }
+        if (queue.length === 0) return;
+
+        const gen = posterPrefetchGen;
+        const concurrency = 2;
+
+        setTimeout(() => {
+            if (gen !== posterPrefetchGen) return;
+            const modal = typeof document !== 'undefined' ? document.getElementById('av-dedup-modal') : null;
+            if (modal && modal.style.display === 'none') return;
+
+            let idx = 0;
+            const runWorker = async () => {
+                while (gen === posterPrefetchGen && idx < queue.length) {
+                    const curModal = typeof document !== 'undefined' ? document.getElementById('av-dedup-modal') : null;
+                    if (curModal && curModal.style.display === 'none') return;
+                    const nextCode = queue[idx++];
+                    if (!nextCode || posterMemoryCache.has(nextCode)) continue;
+                    try {
+                        await getHdPosterForCode(nextCode, settings);
+                    } catch (e) {}
+                    if (gen !== posterPrefetchGen) return;
+                    await sleep(250);
+                }
+            };
+            for (let i = 0; i < Math.min(concurrency, queue.length); i++) {
+                runWorker();
+            }
+        }, 300);
+    }
+
     function ensureThumbTooltip() {
         let tip = document.getElementById('av-thumb-tooltip');
         if (tip) return tip;
         tip = document.createElement('div');
         tip.id = 'av-thumb-tooltip';
         Object.assign(tip.style, {
-            position: 'fixed', zIndex: '250000', width: '300px', borderRadius: '10px',
-            boxShadow: '0 16px 40px rgba(15, 23, 42, 0.35)', border: '1px solid var(--av-border)',
-            padding: '10px', pointerEvents: 'none', display: 'none',
+            position: 'fixed', zIndex: '250000', width: '480px', maxWidth: '92vw', boxSizing: 'border-box',
+            borderRadius: '10px', boxShadow: '0 20px 48px rgba(15, 23, 42, 0.42)',
+            border: '1px solid var(--av-border)', padding: '10px', pointerEvents: 'none', display: 'none',
             fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
         });
         tip.className = 'av-modal-surface';
@@ -2721,14 +3062,14 @@
         return tip;
     }
 
-    function renderTooltipPosterFrame(tip, { sources, primarySrc, fallbackSrc, badgeText, badgeBg, badgeColor, emptyHtml }) {
+    function renderTooltipPosterFrame(tip, { sources, primarySrc, fallbackSrc, blob, onDataUrl, badgeText, badgeBg, badgeColor, emptyHtml }) {
         const frame = tip.querySelector('#av-thumb-frame');
         if (!frame) return;
         frame.replaceChildren();
 
         if (badgeText) {
             const pill = document.createElement('span');
-            pill.style.cssText = `position:absolute; top:6px; left:6px; z-index:2; padding:2px 7px; border-radius:999px; font-size:10px; font-weight:700; backdrop-filter:blur(4px); background:${badgeBg || 'rgba(15,23,42,0.72)'}; color:${badgeColor || '#ffffff'};`;
+            pill.style.cssText = `position:absolute; top:8px; left:8px; z-index:2; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:700; backdrop-filter:blur(4px); background:${badgeBg || 'rgba(15,23,42,0.72)'}; color:${badgeColor || '#ffffff'};`;
             pill.textContent = badgeText;
             frame.appendChild(pill);
         }
@@ -2748,7 +3089,15 @@
             img.src = candidateList[0];
             img.referrerPolicy = 'no-referrer';
             img.style.cssText = 'width:100%; height:100%; object-fit:contain; background:#0f172a;';
-            img.addEventListener('error', () => {
+            img.addEventListener('error', async () => {
+                if (srcIdx === 0 && blob && img.src.startsWith('blob:')) {
+                    const lazyData = await blobToDataUrl(blob);
+                    if (lazyData && img.isConnected) {
+                        if (typeof onDataUrl === 'function') onDataUrl(lazyData);
+                        img.src = lazyData;
+                        return;
+                    }
+                }
                 srcIdx++;
                 if (srcIdx < candidateList.length) {
                     img.src = candidateList[srcIdx];
@@ -2756,14 +3105,14 @@
                 }
                 img.remove();
                 const empty = document.createElement('div');
-                empty.style.cssText = 'display:flex; flex-direction:column; align-items:center; color:var(--av-text-soft); font-size:11px; text-align:center; padding:12px;';
+                empty.style.cssText = 'display:flex; flex-direction:column; align-items:center; color:var(--av-text-soft); font-size:12px; text-align:center; padding:12px;';
                 empty.innerHTML = emptyHtml || '<span>预览图加载失败</span>';
                 frame.appendChild(empty);
             });
             frame.appendChild(img);
         } else {
             const empty = document.createElement('div');
-            empty.style.cssText = 'display:flex; flex-direction:column; align-items:center; color:var(--av-text-soft); font-size:11px; text-align:center; padding:12px;';
+            empty.style.cssText = 'display:flex; flex-direction:column; align-items:center; color:var(--av-text-soft); font-size:12px; text-align:center; padding:12px;';
             empty.innerHTML = emptyHtml || '<span>暂无预览图</span>';
             frame.appendChild(empty);
         }
@@ -2772,6 +3121,8 @@
     function applyHdMetadataToTooltip(tip, info, thumbUrl, code) {
         renderTooltipPosterFrame(tip, {
             sources: [info.blobUrl, info.dataUrl, info.posterUrl, info.altThumbUrl, thumbUrl],
+            blob: info.blob || null,
+            onDataUrl: (dataUrl) => { info.dataUrl = dataUrl; },
             badgeText: `HD海报 · ${info.source || '外部'}`,
             badgeBg: 'rgba(5, 150, 105, 0.88)',
             badgeColor: '#ffffff',
@@ -2791,15 +3142,19 @@
                 extra.replaceChildren();
                 if (parts[0]) {
                     const tDiv = document.createElement('div');
-                    tDiv.style.cssText = 'font-size:11px; color:var(--av-text-secondary); overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:1.35; margin-bottom:2px;';
+                    tDiv.style.cssText = 'font-size:12px; color:var(--av-text-secondary); overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:1.35; margin-bottom:2px;';
                     tDiv.textContent = parts[0];
                     extra.appendChild(tDiv);
                 }
                 if (subLine) {
                     const sDiv = document.createElement('div');
-                    sDiv.style.cssText = 'font-size:10px; color:#0284c7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;';
+                    sDiv.style.cssText = 'font-size:11px; color:#0284c7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;';
                     sDiv.textContent = subLine;
                     extra.appendChild(sDiv);
+                }
+                const tipH = tip.offsetHeight || 400;
+                if (tip.offsetTop + tipH + 12 > window.innerHeight) {
+                    tip.style.top = Math.max(12, window.innerHeight - tipH - 12) + 'px';
                 }
             }
         }
@@ -2815,8 +3170,8 @@
         tip.dataset.activeCode = code;
 
         tip.innerHTML = `
-            <div id="av-thumb-frame" class="av-subsurface" style="position:relative; width:100%; height:196px; border-radius:6px; overflow:hidden; display:flex; align-items:center; justify-content:center; margin-bottom:8px;"></div>
-            <div style="font-size:12px; font-weight:700; color:var(--av-text); margin-bottom:3px; word-break:break-all;">${escapeHtml(code || file.n)}</div>
+            <div id="av-thumb-frame" class="av-subsurface" style="position:relative; width:100%; height:310px; max-height:55vh; border-radius:8px; overflow:hidden; display:flex; align-items:center; justify-content:center; margin-bottom:10px;"></div>
+            <div style="font-size:13px; font-weight:700; color:var(--av-text); margin-bottom:3px; word-break:break-all;">${escapeHtml(code || file.n)}</div>
             <div id="av-thumb-extra" style="display:none; margin-bottom:4px;"></div>
             <div style="font-size:11px; color:var(--av-text-muted); display:flex; justify-content:space-between; gap:8px;">
                 <span style="flex-shrink:0;">${formatSize(file.s)}</span>
@@ -2840,7 +3195,7 @@
             } else {
                 renderTooltipPosterFrame(tip, {
                     primarySrc: '',
-                    emptyHtml: `<div style="width:18px; height:18px; border:2px solid #cbd5e1; border-top-color:#2563eb; border-radius:50%; animation:spin 0.8s linear infinite; margin-bottom:8px;"></div><span>正在自动检索 <b>${escapeHtml(code)}</b> 高清海报...</span>`
+                    emptyHtml: `<div style="width:18px; height:18px; border:2px solid #cbd5e1; border-top-color:#2563eb; border-radius:50%; animation:spin 0.8s linear infinite; margin-bottom:8px;"></div><span>正在多源并发检索 <b>${escapeHtml(code)}</b> 高清海报...</span>`
                 });
             }
 
@@ -2879,9 +3234,11 @@
     function moveThumbTooltip(e) {
         const tip = document.getElementById('av-thumb-tooltip');
         if (!tip || tip.style.display === 'none') return;
-        let x = e.clientX + 16, y = e.clientY + 16;
-        if (x + 314 > window.innerWidth) x = Math.max(12, e.clientX - 316);
-        if (y + 300 > window.innerHeight) y = Math.max(12, window.innerHeight - 300);
+        const w = tip.offsetWidth || 480;
+        const h = tip.offsetHeight || 400;
+        let x = e.clientX + 18, y = e.clientY + 18;
+        if (x + w + 12 > window.innerWidth) x = Math.max(12, e.clientX - w - 14);
+        if (y + h + 12 > window.innerHeight) y = Math.max(12, window.innerHeight - h - 12);
         tip.style.left = x + 'px';
         tip.style.top = y + 'px';
     }
@@ -3132,6 +3489,7 @@
         const closeModal = () => {
             modal.style.display = 'none';
             hideThumbTooltip();
+            cancelPosterPrefetch();
             if (scanState.isRunning) scanState.abort();
         };
         document.getElementById('dedup-close-btn').onclick = closeModal;
@@ -3618,6 +3976,7 @@
 
     function renderCurrentTab() {
         hideThumbTooltip();
+        cancelPosterPrefetch();
         if (currentTab === 'dups') renderGroups(duplicateGroups, true, false);
         else if (currentTab === 'sha') renderGroups(shaDuplicateGroups, true, true);
         else if (currentTab === 'all') renderGroups(allGroups, false, false);
@@ -3770,6 +4129,18 @@
 
         contentBox.innerHTML = html;
         updateSelectedStats();
+
+        const posterMode = settings.posterPriority || 'hd_first';
+        if (posterMode !== 'off') {
+            const prefetchCodes = [];
+            keys.forEach(key => {
+                const codeItem = (targetGroups[key] || []).find(item => item && item.parsedCode);
+                if (!codeItem) return;
+                if (posterMode === 'fallback' && codeItem.thumb) return;
+                prefetchCodes.push(codeItem.parsedCode);
+            });
+            schedulePosterPrefetch(prefetchCodes, settings);
+        }
     }
 
     async function handleSingleQuickRename(fid, btnEl) {
@@ -4232,6 +4603,9 @@
                                 <option value="javbus">优先 JavBus</option>
                                 <option value="javdb">优先 JavDB</option>
                                 <option value="avsox">优先 AVSOX</option>
+                                <option value="airav">优先 AirAV</option>
+                                <option value="123av">优先 123AV</option>
+                                <option value="javtrailers">优先 JavTrailers</option>
                             </select>
                             <select id="set-poster-priority" class="av-input" style="width:100%; padding:7px 10px; border-radius:6px; font-size:12px;">
                                 <option value="hd_first">总是自动检索高清海报 (推荐)</option>
@@ -5584,6 +5958,10 @@
             parseJavDbHtml,
             parseAvsoxHtml,
             parseJav321Html,
+            parseAiravHtml,
+            parse123AvHtml,
+            parseJavTrailersHtml,
+            parseFc2PageHtml,
             buildPosterFetchPlan,
             compareSemver,
             parseUserscriptVersionFromMeta

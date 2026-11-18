@@ -8,7 +8,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Supported-green.svg)](https://www.tampermonkey.net/)
-[![Version](https://img.shields.io/badge/Version-5.3.0-blue.svg)](https://github.com/thevipsong/115-av-dedup-helper)
+[![Version](https://img.shields.io/badge/Version-5.3.1-blue.svg)](https://github.com/thevipsong/115-av-dedup-helper)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/thevipsong/115-av-dedup-helper/pulls)
 
 [核心特性](#-核心特性) • [界面预览](#-界面预览) • [安装方式](#-安装指南) • [使用教程](#-使用教程) • [版本记录](#-版本演进记录) • [免责声明](#-免责声明)
@@ -48,8 +48,8 @@
   - **防后悔撤销记录**：每次重命名自动保存还原快照（最近 10 批），支持一键批量恢复原名与导出映射表。
 
 - 🔍 **元数据直达 & 缩略图悬浮预览 & 清单查漏 (v5.0 新增)**
-  - **外链详情检索**：一键跳转 **JavBus / JavDB / AVSOX** 检索对应番号信息（可在设置中切换偏好站点）。
-  - **自动高清海报悬浮预览 (v5.2 增强)**：悬停行内预览图标自动通过跨域代理检索 **JavBus / JavDB / AVSOX** 高清大封面并展示影片标题、发行日期与演员信息（内置防盗链 Blob 下载与 IndexedDB 7 天持久化缓存，可在设置切换“总是自动检索 / 仅缺失时检索 / 关闭”）。
+  - **外链详情检索**：一键跳转 **JavBus / JavDB / AVSOX / AirAV / 123AV / JavTrailers** 检索对应番号信息（可在设置中切换偏好站点）。
+  - **自动高清海报悬浮预览 (v5.3 极速并发增强)**：悬停行内预览图标即展示 **480×310 高清大封面**（支持自适应视口缩放），后端采用 **7 源阶梯竞速引擎**（**JavBus / JavDB / AVSOX / Jav321 / AirAV / 123AV / JavTrailers**，FC2 专属直连 **FC2PPVDB / FC2CMADB**）并配合当前页温和后台预加载，首图秒开与防盗链 Blob + IndexedDB 7 天持久化缓存（可在设置切换“总是自动检索 / 仅缺失时检索 / 关闭”）。
   - **导出与比对查漏**：支持导出 **TXT / CSV（带 BOM 防乱码）/ Markdown** 番号库；支持粘贴外部清单秒速比对网盘“已存在”与“缺失待补”。
 
 - ⏳ **IndexedDB 本地秒开缓存 & 忽略目录名单 (v5.0 新增)**
@@ -184,6 +184,16 @@ node --test tests/parser.test.js
 ---
 
 ## 📑 版本演进记录
+
+### v5.3.1 (7 源阶梯并发海报引擎 · 当前页后台预热 · 480×310 高清大封面预览)
+- **⚡ 封面获取速度大幅提速（告别串行排队超时）**：
+  - 重构 `getHdPosterForCode` 为 **双梯队阶梯并发竞速 (`raceFirstWithGrace`)**：首选站点享 `180ms` 优先抢跑期后立即并行触发第一梯队核心源（JavBus / JavDB / AVSOX），若遇拦截或超时则快速激活第二梯队（Jav321 / AirAV / 123AV / JavTrailers）并行竞速，单页 HTML 超时收紧至 `4.5s`，图片下载跳过冗余同步 Base64 解码（仅在 CSP 拒绝 `blob:` 时惰性兜底），最快命中即刻返回。
+  - 新增 **当前页可见番号温和预加载**：渲染当前列表页后自动以并发 2 后台预热前 10 个未缓存番号的封面元数据，切页/搜索/关窗自动中断旧队列，悬停预览秒出图。
+- **🌐 扩充 4 大高命中率封面源**：
+  - 常规/无码番号新增 **AirAV (`airav.wiki`)**、**123AV (`123av.com`)**、**JavTrailers (`javtrailers.com`)** 三大高速源；
+  - `FC2-PPV` 系列新增专属直连源 **FC2PPVDB (`fc2ppvdb.com`)** 与 **FC2CMADB (`fc2cmadb.com`)**，并在偏好设置支持直接选择 AirAV / 123AV / JavTrailers 作为首选检索站点。
+- **🖼️ 高清封面悬浮框放大升级**：
+  - 悬浮预览卡片宽度由 `300px` 放大至 **`480px` (`max-width: 92vw`)**，封面视框高度由 `196px` 放大至 **`310px` (`max-height: 55vh`)**，贴合 `800×538` 横版海报黄金比例并动态适配屏幕边界防遮挡。
 
 ### v5.3.0 (自动检查更新与 `.meta.js` 极速推送升级通道)
 - **🔄 双通道自动更新机制**：

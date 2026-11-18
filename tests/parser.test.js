@@ -37,13 +37,17 @@ const {
     parseJavDbHtml,
     parseAvsoxHtml,
     parseJav321Html,
+    parseAiravHtml,
+    parse123AvHtml,
+    parseJavTrailersHtml,
+    parseFc2PageHtml,
     buildPosterFetchPlan,
     compareSemver,
     parseUserscriptVersionFromMeta
 } = require('../115-av-dedup-helper.user.js');
 
 test('版本号导出校验', () => {
-    assert.equal(APP_VERSION, '5.3.0');
+    assert.equal(APP_VERSION, '5.3.1');
 });
 
 test('标准有码、特异片商及自定义前缀/屏蔽词识别', () => {
@@ -308,9 +312,20 @@ test('高清海报检索计划、番号精确边界匹配与相对 URL 解析', 
     assert.equal(stdPlan[3].site, 'avsox');
     assert.equal(stdPlan[4].site, 'jav321');
     assert.equal(stdPlan[4].method, 'POST');
+    assert.equal(stdPlan[5].site, 'airav');
+    assert.equal(stdPlan[6].site, '123av');
+    assert.equal(stdPlan[7].site, 'javtrailers');
 
     const fc2Plan = buildPosterFetchPlan('FC2-PPV-3456789', 'javbus');
-    assert.equal(fc2Plan[0].site, 'javdb'); // FC2 自动跳过 JavBus 直达 JavDB/AVSOX
+    assert.equal(fc2Plan[0].site, 'javdb'); // FC2 自动跳过 JavBus 直达 JavDB/AVSOX/FC2DB
+    assert.equal(fc2Plan[2].site, 'fc2ppvdb');
+    assert.equal(fc2Plan[2].url, 'https://fc2ppvdb.com/articles/3456789');
+    assert.equal(fc2Plan[3].site, 'fc2cmadb');
+    assert.equal(fc2Plan[4].site, '123av');
+
+    assert.equal(getMetadataSearchUrl('IPZ-405', 'airav'), 'https://www.airav.wiki/cn/search?keyword=IPZ-405');
+    assert.equal(getMetadataSearchUrl('IPZ-405', '123av'), 'https://123av.com/zh/search?keyword=IPZ-405');
+    assert.equal(getMetadataSearchUrl('IPZ-405', 'javtrailers'), 'https://javtrailers.com/search/IPZ-405');
 });
 
 test('JavBus / JavDB / AVSOX 高清封面与搜索结果 HTML 解析', () => {
@@ -367,6 +382,73 @@ test('JavBus / JavDB / AVSOX 高清封面与搜索结果 HTML 解析', () => {
     assert.equal(j321Detail.kind, 'detail');
     assert.equal(j321Detail.source, 'Jav321');
     assert.equal(j321Detail.posterUrl, 'https://pics.dmm.co.jp/digital/video/1start00668/1start00668pl.jpg');
+
+    const airavSearch = parseAiravHtml(
+        `<a href="/cn/video/IPZ-405"><img data-src="https://wiki-img.airav.wiki/storage/big_pic/ipz-405.jpg"><h5>IPZ-405 示例标题</h5></a>`,
+        'https://www.airav.wiki/cn/search?keyword=IPZ-405',
+        'IPZ-405'
+    );
+    assert.equal(airavSearch.kind, 'search_hit');
+    assert.equal(airavSearch.source, 'AirAV');
+    assert.equal(airavSearch.detailUrl, 'https://www.airav.wiki/cn/video/IPZ-405');
+    assert.equal(airavSearch.fallbackPosterUrl, 'https://wiki-img.airav.wiki/storage/big_pic/ipz-405.jpg');
+
+    const airavDetail = parseAiravHtml(
+        `<html><head><meta property="og:image" content="https://wiki-img.airav.wiki/storage/big_pic/ipz-405.jpg"></head><body><h1>IPZ-405 作品标题</h1><span>2024-03-15</span></body></html>`,
+        'https://www.airav.wiki/cn/video/IPZ-405',
+        'IPZ-405'
+    );
+    assert.equal(airavDetail.kind, 'detail');
+    assert.equal(airavDetail.source, 'AirAV');
+    assert.equal(airavDetail.posterUrl, 'https://wiki-img.airav.wiki/storage/big_pic/ipz-405.jpg');
+    assert.equal(airavDetail.date, '2024-03-15');
+
+    const av123Search = parse123AvHtml(
+        `<a href="/zh/v/start-668" title="START-668 标题"><img data-src="https://cdn.123av.com/thumb/start668.jpg"></a>`,
+        'https://123av.com/zh/search?keyword=START-668',
+        'START-668'
+    );
+    assert.equal(av123Search.kind, 'search_hit');
+    assert.equal(av123Search.source, '123AV');
+    assert.equal(av123Search.detailUrl, 'https://123av.com/zh/v/start-668');
+    assert.equal(av123Search.fallbackPosterUrl, 'https://cdn.123av.com/thumb/start668.jpg');
+
+    const av123Detail = parse123AvHtml(
+        `<video poster="https://cdn.123av.com/poster/start668.jpg"></video><h1>START-668 标题</h1>`,
+        'https://123av.com/zh/v/start-668',
+        'START-668'
+    );
+    assert.equal(av123Detail.kind, 'detail');
+    assert.equal(av123Detail.posterUrl, 'https://cdn.123av.com/poster/start668.jpg');
+
+    const jtSearch = parseJavTrailersHtml(
+        `<a href="/video/1start00668"><img alt="START-668" src="https://pics.dmm.co.jp/digital/video/1start00668/1start00668ps.jpg"></a>`,
+        'https://javtrailers.com/search/START-668',
+        'START-668'
+    );
+    assert.equal(jtSearch.kind, 'search_hit');
+    assert.equal(jtSearch.source, 'JavTrailers');
+    assert.equal(jtSearch.detailUrl, 'https://javtrailers.com/video/1start00668');
+
+    const fc2Detail = parseFc2PageHtml(
+        `<html><head><meta property="og:image" content="https://fc2ppvdb.com/imgs/3456789.jpg"></head><body><h1>FC2PPV 3456789</h1><span>2025-01-20</span></body></html>`,
+        'https://fc2ppvdb.com/articles/3456789',
+        'FC2-PPV-3456789',
+        'FC2PPVDB'
+    );
+    assert.equal(fc2Detail.kind, 'detail');
+    assert.equal(fc2Detail.source, 'FC2PPVDB');
+    assert.equal(fc2Detail.posterUrl, 'https://fc2ppvdb.com/imgs/3456789.jpg');
+
+    const fc2Search = parseFc2PageHtml(
+        `<a href="/articles/34567890">FC2-PPV-34567890 干扰项</a><a href="/articles/3456789"><img src="/thumbs/3456789.jpg">FC2PPV 3456789</a>`,
+        'https://fc2cmadb.com/?s=FC2-PPV-3456789',
+        'FC2-PPV-3456789',
+        'FC2CMADB'
+    );
+    assert.equal(fc2Search.kind, 'search_hit');
+    assert.equal(fc2Search.source, 'FC2CMADB');
+    assert.equal(fc2Search.detailUrl, 'https://fc2cmadb.com/articles/3456789');
 
     const blocked = parseJavBusHtml('<html><title>Just a moment...</title></html>', 'https://www.javbus.com/IPZ-405', 'IPZ-405');
     assert.equal(blocked.kind, 'blocked');
