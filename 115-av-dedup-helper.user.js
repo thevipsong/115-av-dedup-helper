@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         老司机工作台
 // @namespace    https://github.com/thevipsong/115-av-dedup-helper
-// @version      5.2.0
-// @description  老司机工作台：专为115网盘与98堂/色花堂打造的一体化影库整理神器。网盘端支持SHA1同源查重、智能优选、模板重命名、归档提取、自动检索高清海报、夜间模式、清单查漏与Anti-WAF装甲；论坛端支持一键复制所有/已选帖子链接、批量提取磁力/ed2k/附件、版块时间筛选、列表图文预览增强，并跨站自动标记[115已有]。
+// @version      5.2.1
+// @description  老司机工作台：专为115网盘与98堂/色花堂打造的一体化影库整理神器。网盘端支持SHA1同源查重、智能优选、模板重命名、归档提取、自动检索高清海报、夜间模式、清单查漏与Anti-WAF装甲；论坛端支持版块与时间快选、批量提取磁力/ed2k/附件，并跨站自动标记[115已有]。
 // @author       thevipsong
 // @license      MIT
 // @icon         data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22b%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%230f172a%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%231e293b%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22c%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%236366f1%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%232563eb%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22r%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2338bdf8%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23818cf8%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%2256%22%20height%3D%2256%22%20rx%3D%2214%22%20fill%3D%22url(%23b)%22%2F%3E%3Crect%20x%3D%2215%22%20y%3D%2214%22%20width%3D%2226%22%20height%3D%2233%22%20rx%3D%224.5%22%20transform%3D%22rotate(-10%2028%2030.5)%22%20fill%3D%22url(%23c)%22%20opacity%3D%22.92%22%2F%3E%3Crect%20x%3D%2220%22%20y%3D%2217%22%20width%3D%2228%22%20height%3D%2228%22%20rx%3D%225.5%22%20fill%3D%22rgba(148%2C163%2C184%2C.18)%22%20stroke%3D%22rgba(226%2C232%2C240%2C.45)%22%20stroke-width%3D%221.2%22%2F%3E%3Ccircle%20cx%3D%2234%22%20cy%3D%2231%22%20r%3D%2210%22%20fill%3D%22none%22%20stroke%3D%22url(%23r)%22%20stroke-width%3D%222.2%22%2F%3E%3Crect%20x%3D%2228.5%22%20y%3D%2227%22%20width%3D%2211%22%20height%3D%228%22%20rx%3D%221.8%22%20fill%3D%22none%22%20stroke%3D%22%23e0f2fe%22%20stroke-width%3D%221.6%22%2F%3E%3Cpolygon%20points%3D%2232.8%2C29.1%2036.6%2C31%2032.8%2C32.9%22%20fill%3D%22%23e0f2fe%22%2F%3E%3Cpath%20d%3D%22M48%209.5L49.4%2013.6L53.5%2015L49.4%2016.4L48%2020.5L46.6%2016.4L42.5%2015L46.6%2013.6Z%22%20fill%3D%22%2334d399%22%2F%3E%3C%2Fsvg%3E
@@ -21,6 +21,7 @@
 // @connect      javbus.com
 // @connect      javdb.com
 // @connect      avsox.click
+// @connect      jav321.com
 // @connect      dmm.co.jp
 // @connect      jdbstatic.com
 // @connect      *
@@ -30,7 +31,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '5.2.0';
+    const APP_VERSION = '5.2.1';
     const SETTINGS_KEY = 'av_dedup_settings_v5';
     const HISTORY_KEY = 'av_dedup_rename_history_v5';
     const DB_NAME = 'av_dedup_cache_v5';
@@ -423,28 +424,6 @@
         for (const e of ed2kMatches) pushLink(e);
 
         return { links, attachments };
-    }
-
-    function formatThreadLinksText(posts, options = {}) {
-        const includeTitle = Boolean(options.includeTitle);
-        const dedup = options.dedup !== false;
-        const list = Array.isArray(posts) ? posts : [];
-        const lines = [];
-        const seen = new Set();
-        for (const post of list) {
-            const url = sanitizeHttpUrl(post && post.url);
-            if (!url) continue;
-            if (dedup && seen.has(url)) continue;
-            seen.add(url);
-            if (includeTitle) {
-                const tag = post.code ? `[${post.code}] ` : '';
-                const title = String(post.title || '').replace(/[\r\n]+/g, ' ').trim();
-                lines.push(title || tag ? `${tag}${title} ${url}`.trim() : url);
-            } else {
-                lines.push(url);
-            }
-        }
-        return lines.join('\n');
     }
 
     function parseCalendarDate(dateStr) {
@@ -1401,9 +1380,16 @@
                 if (isMatchingAvCode(candidate, targetCode)) {
                     const detailUrl = resolvePosterUrl(box.getAttribute('href'), pageUrl);
                     const imgEl = box.querySelector('img');
-                    const thumbSrc = resolvePosterUrl(imgEl?.getAttribute('src') || imgEl?.getAttribute('data-src'), pageUrl);
+                    const thumbSrc = resolvePosterUrl(
+                        imgEl?.getAttribute('src') || imgEl?.getAttribute('data-src') || imgEl?.getAttribute('data-original'),
+                        pageUrl
+                    );
                     if (detailUrl) {
-                        return { kind: 'search_hit', source: 'JavDB', detailUrl, fallbackPosterUrl: upgradeJavDbCoverUrl(thumbSrc) };
+                        return {
+                            kind: 'search_hit', source: 'JavDB', detailUrl,
+                            fallbackPosterUrl: upgradeJavDbCoverUrl(thumbSrc),
+                            altThumbUrl: thumbSrc
+                        };
                     }
                 }
             }
@@ -1412,7 +1398,7 @@
 
         const coverM = raw.match(/<img\b([^>]*\bclass=["'][^"']*video-cover[^"']*["'][^>]*)>/i);
         if (coverM) {
-            const src = parseHtmlAttr(coverM[1], 'src') || parseHtmlAttr(coverM[1], 'data-src');
+            const src = parseHtmlAttr(coverM[1], 'src') || parseHtmlAttr(coverM[1], 'data-src') || parseHtmlAttr(coverM[1], 'data-original');
             const posterUrl = upgradeJavDbCoverUrl(resolvePosterUrl(src, pageUrl));
             if (posterUrl) {
                 const titleM = raw.match(/<strong[^>]*class=["'][^"']*current-title[^"']*["'][^>]*>([\s\S]*?)<\/strong>/i);
@@ -1434,9 +1420,13 @@
             if (isMatchingAvCode(titleText, targetCode)) {
                 const detailUrl = resolvePosterUrl(boxHref, pageUrl);
                 const imgM = m[2].match(/<img\b([^>]*)>/i);
-                const thumbSrc = imgM ? resolvePosterUrl(parseHtmlAttr(imgM[1], 'src') || parseHtmlAttr(imgM[1], 'data-src'), pageUrl) : '';
+                const thumbSrc = imgM ? resolvePosterUrl(parseHtmlAttr(imgM[1], 'src') || parseHtmlAttr(imgM[1], 'data-src') || parseHtmlAttr(imgM[1], 'data-original'), pageUrl) : '';
                 if (detailUrl) {
-                    return { kind: 'search_hit', source: 'JavDB', detailUrl, fallbackPosterUrl: upgradeJavDbCoverUrl(thumbSrc) };
+                    return {
+                        kind: 'search_hit', source: 'JavDB', detailUrl,
+                        fallbackPosterUrl: upgradeJavDbCoverUrl(thumbSrc),
+                        altThumbUrl: thumbSrc
+                    };
                 }
             }
         }
@@ -1451,6 +1441,55 @@
         return res;
     }
 
+    function parseJav321Html(html, pageUrl, targetCode) {
+        if (isHtmlChallengePage(html)) return { kind: 'blocked' };
+        const raw = String(html || '');
+        const doc = parseDomDoc(raw);
+
+        if (doc) {
+            const isVideoPage = /\/video\//i.test(String(pageUrl || ''));
+            const mainImg = doc.querySelector('.panel-body img.img-responsive, .col-md-12 img.img-responsive');
+            const imgSrc = resolvePosterUrl(mainImg?.getAttribute('src'), pageUrl);
+            if (isVideoPage && imgSrc) {
+                const h3 = (doc.querySelector('h3')?.textContent || '').trim();
+                const dateM = (doc.querySelector('.panel-body')?.textContent || '').match(/\d{4}-\d{2}-\d{2}/);
+                return {
+                    kind: 'detail', source: 'Jav321', posterUrl: imgSrc, pageUrl,
+                    title: h3, date: dateM ? dateM[0] : '', actors: []
+                };
+            }
+            const og = isVideoPage ? parseOgImageFromHtml(raw, pageUrl, doc) : '';
+            if (og) return { kind: 'detail', source: 'Jav321', posterUrl: og, pageUrl, title: '', date: '', actors: [] };
+
+            const links = doc.querySelectorAll('a[href*="/video/"]');
+            for (const a of links) {
+                if (isMatchingAvCode(a.textContent || a.getAttribute('href') || '', targetCode)) {
+                    const detailUrl = resolvePosterUrl(a.getAttribute('href'), pageUrl);
+                    if (detailUrl) return { kind: 'search_hit', source: 'Jav321', detailUrl };
+                }
+            }
+            return { kind: 'none' };
+        }
+
+        if (/\/video\//i.test(String(pageUrl || ''))) {
+            const og = parseOgImageFromHtml(raw, pageUrl, null);
+            const respImg = raw.match(/<img\b([^>]*\bclass=["'][^"']*img-responsive[^"']*["'][^>]*)>/i);
+            const posterUrl = resolvePosterUrl(respImg ? parseHtmlAttr(respImg[1], 'src') : og, pageUrl) || og;
+            if (posterUrl) return { kind: 'detail', source: 'Jav321', posterUrl, pageUrl, title: '', date: '', actors: [] };
+        }
+        const aRe = /<a\b([^>]*\bhref=["'][^"']*\/video\/[^"']*["'][^>]*)>([\s\S]*?)<\/a>/gi;
+        let am;
+        while ((am = aRe.exec(raw)) !== null) {
+            const href = parseHtmlAttr(am[1], 'href');
+            const body = decodeBasicHtmlEntities(am[2]);
+            if (isMatchingAvCode(`${body} ${href}`, targetCode)) {
+                const detailUrl = resolvePosterUrl(href, pageUrl);
+                if (detailUrl) return { kind: 'search_hit', source: 'Jav321', detailUrl };
+            }
+        }
+        return { kind: 'none' };
+    }
+
     function buildPosterFetchPlan(code, preferredSite = 'javbus') {
         const { queryCode, isUncensored, isFc2 } = normalizeSearchCodeForSite(code);
         if (!queryCode) return [];
@@ -1460,16 +1499,22 @@
         const siteBuilders = {
             javbus: () => {
                 if (isFc2) return [];
-                const steps = [{ site: 'javbus', kind: 'detail', url: `https://www.javbus.com/${enc}` }];
+                const steps = [{ site: 'javbus', kind: 'detail', method: 'GET', url: `https://www.javbus.com/${enc}` }];
                 if (isUncensored) {
-                    steps.push({ site: 'javbus', kind: 'search', url: `https://www.javbus.com/uncensored/search/${enc}` });
+                    steps.push({ site: 'javbus', kind: 'search', method: 'GET', url: `https://www.javbus.com/uncensored/search/${enc}` });
                 } else {
-                    steps.push({ site: 'javbus', kind: 'search', url: `https://www.javbus.com/search/${enc}` });
+                    steps.push({ site: 'javbus', kind: 'search', method: 'GET', url: `https://www.javbus.com/search/${enc}` });
                 }
                 return steps;
             },
-            javdb: () => [{ site: 'javdb', kind: 'search', url: `https://javdb.com/search?q=${encOrig}&f=all` }],
-            avsox: () => [{ site: 'avsox', kind: 'search', url: `https://avsox.click/cn/search/${enc}` }]
+            javdb: () => [{ site: 'javdb', kind: 'search', method: 'GET', url: `https://javdb.com/search?q=${encOrig}&f=all` }],
+            avsox: () => [{ site: 'avsox', kind: 'search', method: 'GET', url: `https://avsox.click/cn/search/${enc}` }],
+            jav321: () => isFc2 ? [] : [{
+                site: 'jav321', kind: 'search', method: 'POST',
+                url: 'https://www.jav321.com/search',
+                body: `sn=${encOrig}`,
+                contentType: 'application/x-www-form-urlencoded'
+            }]
         };
 
         let order;
@@ -1478,7 +1523,7 @@
         } else {
             const allSites = ['javbus', 'javdb', 'avsox'];
             const first = allSites.includes(preferredSite) ? preferredSite : 'javbus';
-            order = [first, ...allSites.filter(s => s !== first)];
+            order = [first, ...allSites.filter(s => s !== first), 'jav321'];
         }
 
         const plan = [];
@@ -1583,9 +1628,15 @@
 
     // 注入全局主题与共享 CSS 样式表（支持 Light / Dark）
     function injectGlobalStyles() {
-        if (typeof document === 'undefined' || document.getElementById('av-dedup-global-css')) return;
+        if (typeof document === 'undefined') return;
+        const oldStyle = document.getElementById('av-dedup-global-css');
+        if (oldStyle) {
+            if (oldStyle.dataset.avVersion === APP_VERSION) return;
+            oldStyle.remove();
+        }
         const style = document.createElement('style');
         style.id = 'av-dedup-global-css';
+        style.dataset.avVersion = APP_VERSION;
         style.textContent = `
             :root, [data-av-theme="light"] {
                 --av-bg: #ffffff;
@@ -2311,16 +2362,22 @@
         posterNegativeCache.clear();
     }
 
-    function gmFetchText(url, refererUrl, timeoutMs = 8000) {
+    function gmFetchText(url, refererUrl, options = {}) {
+        const method = options.method || 'GET';
+        const timeoutMs = options.timeoutMs || 8500;
+        const body = options.body || undefined;
+        const contentType = options.contentType || '';
         return new Promise((resolve) => {
             if (typeof GM_xmlhttpRequest !== 'function' || !url) return resolve(null);
             try {
                 GM_xmlhttpRequest({
-                    method: 'GET',
+                    method,
                     url,
+                    data: body,
                     headers: {
                         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                         'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+                        ...(contentType ? { 'Content-Type': contentType } : {}),
                         ...(refererUrl ? { 'Referer': refererUrl } : {})
                     },
                     timeout: timeoutMs,
@@ -2340,9 +2397,23 @@
         });
     }
 
-    function gmFetchImageBlobUrl(imageUrl, refererUrl, timeoutMs = 10000) {
+    function blobToDataUrl(blob) {
         return new Promise((resolve) => {
-            if (typeof GM_xmlhttpRequest !== 'function' || !imageUrl) return resolve('');
+            if (!blob || blob.size > 2 * 1024 * 1024 || typeof FileReader === 'undefined') return resolve('');
+            try {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+                reader.onerror = () => resolve('');
+                reader.readAsDataURL(blob);
+            } catch (e) {
+                resolve('');
+            }
+        });
+    }
+
+    function gmFetchImageAssets(imageUrl, refererUrl, timeoutMs = 10000) {
+        return new Promise((resolve) => {
+            if (typeof GM_xmlhttpRequest !== 'function' || !imageUrl) return resolve({ blobUrl: '', dataUrl: '', missing: false });
             try {
                 GM_xmlhttpRequest({
                     method: 'GET',
@@ -2353,24 +2424,27 @@
                         ...(refererUrl ? { 'Referer': refererUrl } : {})
                     },
                     timeout: timeoutMs,
-                    onload: (res) => {
-                        const blob = res.response;
-                        if (
-                            res.status >= 200 && res.status < 300 &&
-                            blob && blob.size > 2048 &&
-                            !String(blob.type || '').toLowerCase().includes('text/') &&
-                            typeof URL !== 'undefined' && URL.createObjectURL
-                        ) {
-                            resolve(URL.createObjectURL(blob));
-                        } else {
-                            resolve('');
+                    onload: async (res) => {
+                        if (res.status === 404 || res.status === 410 || res.status === 403) {
+                            return resolve({ blobUrl: '', dataUrl: '', missing: true });
                         }
+                        const blob = res.response;
+                        const mime = String((blob && blob.type) || '').toLowerCase();
+                        if (res.status >= 200 && res.status < 300 && blob && blob.size > 2048 && !mime.includes('text/')) {
+                            const blobUrl = (typeof URL !== 'undefined' && URL.createObjectURL) ? URL.createObjectURL(blob) : '';
+                            const dataUrl = await blobToDataUrl(blob);
+                            return resolve({ blobUrl, dataUrl, missing: false });
+                        }
+                        if (res.status >= 200 && res.status < 300 && mime.includes('text/')) {
+                            return resolve({ blobUrl: '', dataUrl: '', missing: true });
+                        }
+                        resolve({ blobUrl: '', dataUrl: '', missing: false });
                     },
-                    onerror: () => resolve(''),
-                    ontimeout: () => resolve('')
+                    onerror: () => resolve({ blobUrl: '', dataUrl: '', missing: false }),
+                    ontimeout: () => resolve({ blobUrl: '', dataUrl: '', missing: false })
                 });
             } catch (e) {
-                resolve('');
+                resolve({ blobUrl: '', dataUrl: '', missing: false });
             }
         });
     }
@@ -2378,14 +2452,28 @@
     function parseSiteHtmlByName(site, html, pageUrl, code) {
         if (site === 'javdb') return parseJavDbHtml(html, pageUrl, code);
         if (site === 'avsox') return parseAvsoxHtml(html, pageUrl, code);
+        if (site === 'jav321') return parseJav321Html(html, pageUrl, code);
         return parseJavBusHtml(html, pageUrl, code);
     }
 
     async function tryHydratePosterResult(detail) {
         if (!detail || !detail.posterUrl) return null;
-        const blobUrl = await gmFetchImageBlobUrl(detail.posterUrl, detail.pageUrl);
-        if (!blobUrl && typeof GM_xmlhttpRequest === 'function') return null;
-        return { ...detail, blobUrl: blobUrl || '' };
+        let assets = await gmFetchImageAssets(detail.posterUrl, detail.pageUrl);
+        let activeUrl = detail.posterUrl;
+        if (assets.missing && detail.altThumbUrl && detail.altThumbUrl !== detail.posterUrl) {
+            const altAssets = await gmFetchImageAssets(detail.altThumbUrl, detail.pageUrl);
+            if (!altAssets.missing) {
+                assets = altAssets;
+                activeUrl = detail.altThumbUrl;
+            }
+        }
+        if (assets.missing && !assets.blobUrl && !assets.dataUrl) return null;
+        return {
+            ...detail,
+            posterUrl: activeUrl,
+            blobUrl: assets.blobUrl || '',
+            dataUrl: assets.dataUrl || ''
+        };
     }
 
     async function getHdPosterForCode(code, settings = {}) {
@@ -2418,7 +2506,11 @@
 
                 for (const step of plan) {
                     if (blockedSites.has(step.site)) continue;
-                    const page = await gmFetchText(step.url);
+                    const page = await gmFetchText(step.url, '', {
+                        method: step.method || 'GET',
+                        body: step.body,
+                        contentType: step.contentType
+                    });
                     if (!page) continue;
 
                     const parsed = parseSiteHtmlByName(step.site, page.html, page.finalUrl || step.url, cleanCode);
@@ -2435,14 +2527,15 @@
                         if (detailPage) {
                             const detailParsed = parseSiteHtmlByName(step.site, detailPage.html, detailPage.finalUrl || parsed.detailUrl, cleanCode);
                             if (detailParsed.kind === 'detail') {
-                                candidate = detailParsed;
+                                candidate = { ...detailParsed, altThumbUrl: parsed.altThumbUrl || '' };
                             }
                         }
-                        if (!candidate && parsed.fallbackPosterUrl) {
+                        if (!candidate && (parsed.fallbackPosterUrl || parsed.altThumbUrl)) {
                             candidate = {
                                 kind: 'detail',
                                 source: parsed.source,
-                                posterUrl: parsed.fallbackPosterUrl,
+                                posterUrl: parsed.fallbackPosterUrl || parsed.altThumbUrl,
+                                altThumbUrl: parsed.altThumbUrl || '',
                                 pageUrl: parsed.detailUrl,
                                 title: '',
                                 date: '',
@@ -2456,6 +2549,7 @@
                         if (hydrated) {
                             const metaToSave = {
                                 posterUrl: hydrated.posterUrl,
+                                altThumbUrl: hydrated.altThumbUrl || '',
                                 pageUrl: hydrated.pageUrl || '',
                                 source: hydrated.source || step.site,
                                 title: hydrated.title || '',
@@ -2498,7 +2592,7 @@
         return tip;
     }
 
-    function renderTooltipPosterFrame(tip, { primarySrc, fallbackSrc, badgeText, badgeBg, badgeColor, emptyHtml }) {
+    function renderTooltipPosterFrame(tip, { sources, primarySrc, fallbackSrc, badgeText, badgeBg, badgeColor, emptyHtml }) {
         const frame = tip.querySelector('#av-thumb-frame');
         if (!frame) return;
         frame.replaceChildren();
@@ -2510,16 +2604,25 @@
             frame.appendChild(pill);
         }
 
-        if (primarySrc) {
+        const candidateList = [];
+        const seenSrc = new Set();
+        for (const s of (Array.isArray(sources) ? sources : [primarySrc, fallbackSrc])) {
+            if (s && !seenSrc.has(s)) {
+                seenSrc.add(s);
+                candidateList.push(s);
+            }
+        }
+
+        if (candidateList.length > 0) {
+            let srcIdx = 0;
             const img = document.createElement('img');
-            img.src = primarySrc;
+            img.src = candidateList[0];
             img.referrerPolicy = 'no-referrer';
             img.style.cssText = 'width:100%; height:100%; object-fit:contain; background:#0f172a;';
-            let triedFallback = false;
             img.addEventListener('error', () => {
-                if (!triedFallback && fallbackSrc && fallbackSrc !== primarySrc) {
-                    triedFallback = true;
-                    img.src = fallbackSrc;
+                srcIdx++;
+                if (srcIdx < candidateList.length) {
+                    img.src = candidateList[srcIdx];
                     return;
                 }
                 img.remove();
@@ -2539,8 +2642,7 @@
 
     function applyHdMetadataToTooltip(tip, info, thumbUrl, code) {
         renderTooltipPosterFrame(tip, {
-            primarySrc: info.blobUrl || info.posterUrl,
-            fallbackSrc: info.blobUrl ? (info.posterUrl || thumbUrl) : thumbUrl,
+            sources: [info.blobUrl, info.dataUrl, info.posterUrl, info.altThumbUrl, thumbUrl],
             badgeText: `HD海报 · ${info.source || '外部'}`,
             badgeBg: 'rgba(5, 150, 105, 0.88)',
             badgeColor: '#ffffff',
@@ -2549,7 +2651,8 @@
         const extra = tip.querySelector('#av-thumb-extra');
         if (extra) {
             const parts = [];
-            if (info.title) parts.push(info.title.replace(new RegExp(`^${code}\\s*`, 'i'), '').trim());
+            const escapedCode = String(code || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            if (info.title) parts.push(info.title.replace(new RegExp(`^${escapedCode}\\s*`, 'i'), '').trim());
             const subParts = [];
             if (info.date) subParts.push(info.date);
             if (Array.isArray(info.actors) && info.actors.length > 0) subParts.push(info.actors.slice(0, 3).join(' / '));
@@ -2666,9 +2769,16 @@
     function initUI() {
         injectGlobalStyles();
         applyThemeClass();
-        if (document.getElementById('av-dedup-launcher')) return;
+        const existingLauncher = document.getElementById('av-dedup-launcher');
+        if (existingLauncher) {
+            if (existingLauncher.dataset.avVersion === APP_VERSION) return;
+            existingLauncher.remove();
+            const staleModal = document.getElementById('av-dedup-modal');
+            if (staleModal && staleModal.dataset.avVersion !== APP_VERSION) staleModal.remove();
+        }
         const launchBtn = document.createElement('div');
         launchBtn.id = 'av-dedup-launcher';
+        launchBtn.dataset.avVersion = APP_VERSION;
         launchBtn.innerHTML = `${createBrandIconSvg(20)}<span style="margin-left:7px;">老司机工作台</span>`;
         Object.assign(launchBtn.style, {
             position: 'fixed', right: '28px', bottom: '88px', zIndex: '99999',
@@ -2709,6 +2819,10 @@
         const curCid = getCurrentCid();
 
         let modal = document.getElementById('av-dedup-modal');
+        if (modal && modal.dataset.avVersion !== APP_VERSION) {
+            modal.remove();
+            modal = null;
+        }
         if (modal) {
             modal.style.display = 'flex';
             if (curCid !== lastOpenedCid) {
@@ -2723,6 +2837,7 @@
         lastOpenedCid = curCid;
         modal = document.createElement('div');
         modal.id = 'av-dedup-modal';
+        modal.dataset.avVersion = APP_VERSION;
         Object.assign(modal.style, {
             position: 'fixed', inset: '0', backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(6px)',
             zIndex: '100000', display: 'flex', justifyContent: 'center', alignItems: 'center',
@@ -4489,13 +4604,6 @@
             .av-forum-result-box li { margin-bottom: 3px; word-break: break-all; }
             .av-forum-result-box a { color: #2563eb; text-decoration: none; }
             .av-forum-result-box a:hover { text-decoration: underline; }
-            .av-forum-preview-card { padding: 8px 12px; background: #f8fafc; border-top: 1px dashed #e2e8f0; }
-            .av-forum-preview-text { white-space: pre-wrap; margin: 0 0 6px 0; color: #475569; font-size: 12px; line-height: 1.5; }
-            .av-forum-preview-imgs { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
-            .av-forum-preview-imgs img {
-                width: calc(33.33% - 6px); max-height: 220px; object-fit: cover;
-                border-radius: 6px; border: 1px solid #cbd5e1; background: #e2e8f0;
-            }
             #av-forum-toast {
                 position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100000;
                 padding: 10px 18px; border-radius: 8px; background: #0f172a; color: #ffffff;
@@ -4537,50 +4645,6 @@
             runners.push(runWorker());
         }
         return Promise.all(runners).then(() => results);
-    }
-
-    function extractThreadPreviewFromHtml(html, baseOrigin) {
-        if (!html || typeof DOMParser === 'undefined') return { text: '', images: [] };
-        let doc;
-        try {
-            doc = new DOMParser().parseFromString(html, 'text/html');
-        } catch (e) {
-            return { text: '', images: [] };
-        }
-        const postBody = doc.querySelector('.t_f');
-        const rawText = postBody ? (postBody.textContent || '') : '';
-        const text = rawText.replace(/[ \t]+/g, ' ').replace(/\n+/g, '\n').trim().slice(0, 100);
-
-        const images = [];
-        const seen = new Set();
-        const collectImgs = (selector) => {
-            doc.querySelectorAll(selector).forEach(img => {
-                if (images.length >= 3) return;
-                const id = img.getAttribute('id') || '';
-                if (!/^aimg_\d+$/.test(id)) return;
-                const candidates = [
-                    img.getAttribute('file'),
-                    img.getAttribute('zoomfile'),
-                    img.getAttribute('data-original'),
-                    img.getAttribute('src')
-                ];
-                for (const rawSrc of candidates) {
-                    if (!rawSrc || /none\.gif|loading\.gif/i.test(rawSrc)) continue;
-                    const resolved = resolveForumAbsoluteUrl(rawSrc, baseOrigin);
-                    if (resolved && !seen.has(resolved)) {
-                        seen.add(resolved);
-                        images.push(resolved);
-                        break;
-                    }
-                }
-            });
-        };
-
-        collectImgs('.t_f img[id^="aimg_"]');
-        if (images.length === 0) {
-            collectImgs('.t_fsz img[id^="aimg_"]');
-        }
-        return { text, images };
     }
 
     function initForumEnhancer() {
@@ -4633,9 +4697,7 @@
         const state = {
             selectTimeIdx: typeof savedState.selectTimeIdx === 'number' ? savedState.selectTimeIdx : -1,
             downloadAttachments: savedState.downloadAttachments !== undefined ? Boolean(savedState.downloadAttachments) : true,
-            enhancePreview: savedState.enhancePreview !== undefined ? Boolean(savedState.enhancePreview) : true,
             showResultBox: savedState.showResultBox !== undefined ? Boolean(savedState.showResultBox) : true,
-            copyIncludeTitle: Boolean(savedState.copyIncludeTitle),
             collapsed: Boolean(savedState.collapsed)
         };
 
@@ -4646,10 +4708,7 @@
         const tuples = (mode === 1 && params.fid && Array.isArray(boardDict[params.fid])) ? boardDict[params.fid] : [];
         let selectTypes = tuples.map((t, idx) => (t[2] === 1 ? idx : -1)).filter(idx => idx !== -1);
         const threadHtmlCache = new Map();
-        const enhancedTids = new Set();
         let activeAbortCtrl = null;
-        let lastCopiedLinksText = '';
-        let previewBusy = false;
 
         function saveForumState() {
             gmSetValue(FORUM_SETTINGS_GM_KEY, state);
@@ -4723,12 +4782,6 @@
                 const ownedTxt = ownedCodesSet.size > 0 ? ` · 115已有 ${ownedCount}` : '';
                 statEl.textContent = `本页 ${rows.length} 贴 · 已选 ${selectedCount}${ownedTxt}`;
             }
-            const copyPostBtn = panel.querySelector('#av-forum-copy-post-links');
-            if (copyPostBtn) {
-                copyPostBtn.textContent = selectedCount > 0
-                    ? `复制已选帖子链接 (${selectedCount})`
-                    : `复制全部帖子链接 (${rows.length})`;
-            }
             const extractBtn = panel.querySelector('#av-forum-extract-links');
             if (extractBtn && !activeAbortCtrl) {
                 extractBtn.textContent = selectedCount > 0
@@ -4759,7 +4812,7 @@
                 const table = document.querySelector('table#threadlisttableid');
                 if (!table) return;
                 table.querySelectorAll('tr').forEach(row => {
-                    if (row.classList.contains('av-forum-preview-row') || row.closest('#av-forum-bar') || row.dataset.avForumBound === '1') return;
+                    if (row.closest('#av-forum-bar') || row.dataset.avForumBound === '1') return;
                     const cells = row.querySelectorAll(':scope > th, :scope > td');
                     if (cells.length === 0) return;
 
@@ -4827,7 +4880,7 @@
                 const table = document.querySelector('div.tl form table');
                 if (!table) return;
                 table.querySelectorAll('tr').forEach(row => {
-                    if (row.classList.contains('av-forum-preview-row') || row.dataset.avForumBound === '1') return;
+                    if (row.dataset.avForumBound === '1') return;
                     row.dataset.avForumBound = '1';
                     const cell = document.createElement('td');
                     cell.className = 'av-forum-ckbox';
@@ -5014,112 +5067,6 @@
             return html;
         }
 
-        function removeAllPreviews() {
-            document.querySelectorAll('.av-forum-preview-row').forEach(el => el.remove());
-            enhancedTids.clear();
-        }
-
-        async function runPreviewEnhancement() {
-            if (!state.enhancePreview || previewBusy) return;
-            const pending = getAllThreadRows().filter(tr => {
-                const tid = tr.dataset.avForumTid;
-                return tid && !enhancedTids.has(tid);
-            });
-            if (pending.length === 0) return;
-
-            previewBusy = true;
-            try {
-                await runBatchQueue(pending, async (row) => {
-                    if (!state.enhancePreview) return;
-                    const tid = row.dataset.avForumTid;
-                    const url = row.dataset.avForumUrl;
-                    const html = await fetchThreadHtml(tid, url, null);
-                    if (!state.enhancePreview || enhancedTids.has(tid)) return;
-
-                    const { text, images } = extractThreadPreviewFromHtml(html, window.location.origin);
-                    enhancedTids.add(tid);
-                    if (!text && images.length === 0) return;
-
-                    const card = document.createElement('div');
-                    card.className = 'av-forum-preview-card';
-                    if (text) {
-                        const p = document.createElement('p');
-                        p.className = 'av-forum-preview-text';
-                        p.textContent = text;
-                        card.appendChild(p);
-                    }
-                    if (images.length > 0) {
-                        const imgWrap = document.createElement('div');
-                        imgWrap.className = 'av-forum-preview-imgs';
-                        images.forEach(src => {
-                            const img = document.createElement('img');
-                            img.src = src;
-                            img.loading = 'lazy';
-                            img.setAttribute('referrerpolicy', 'no-referrer');
-                            imgWrap.appendChild(img);
-                        });
-                        card.appendChild(imgWrap);
-                    }
-
-                    if (mode === 1) {
-                        const tbody = row.closest('tbody');
-                        if (!tbody) return;
-                        const previewTbody = document.createElement('tbody');
-                        previewTbody.className = 'av-forum-preview-row img_tbody';
-                        const ptr = document.createElement('tr');
-                        ptr.className = 'img_tr';
-                        const tdEmpty = document.createElement('td');
-                        tdEmpty.colSpan = 2;
-                        const tdBody = document.createElement('td');
-                        tdBody.colSpan = 4;
-                        tdBody.appendChild(card);
-                        ptr.appendChild(tdEmpty);
-                        ptr.appendChild(tdBody);
-                        previewTbody.appendChild(ptr);
-                        tbody.after(previewTbody);
-                    } else {
-                        const ptr = document.createElement('tr');
-                        ptr.className = 'av-forum-preview-row img_tr';
-                        const tdEmpty = document.createElement('td');
-                        const tdBody = document.createElement('td');
-                        tdBody.colSpan = Math.max(1, (row.cells ? row.cells.length : 5) - 1);
-                        tdBody.appendChild(card);
-                        ptr.appendChild(tdEmpty);
-                        ptr.appendChild(tdBody);
-                        row.after(ptr);
-                    }
-                }, { concurrency: 3, delayMs: 180 });
-            } finally {
-                previewBusy = false;
-            }
-        }
-
-        async function handleCopyPostLinks() {
-            const posts = getTargetPosts(true);
-            if (posts.length === 0) {
-                showForumToast('当前列表没有可复制的帖子');
-                return;
-            }
-            const formatted = formatThreadLinksText(posts, { includeTitle: state.copyIncludeTitle, dedup: true });
-            if (!formatted) {
-                showForumToast('未获取到有效帖子链接');
-                return;
-            }
-            lastCopiedLinksText = formatted;
-            const ok = await copyTextToClipboard(formatted);
-            const resultBox = document.getElementById('av-forum-result-box');
-            if (resultBox) {
-                const ul = document.createElement('ul');
-                const li = document.createElement('li');
-                li.textContent = ok
-                    ? `已复制 ${posts.length} 条帖子链接到剪贴板${state.copyIncludeTitle ? '（含标题）' : ''}`
-                    : '剪贴板写入受限，请尝试手动复制';
-                ul.appendChild(li);
-                resultBox.replaceChildren(ul);
-            }
-            showForumToast(ok ? `已一键复制 ${posts.length} 条帖子链接` : '复制失败，请检查剪贴板权限');
-        }
-
         async function handleExtractResources() {
             const extractBtn = document.getElementById('av-forum-extract-links');
             if (activeAbortCtrl) {
@@ -5195,11 +5142,10 @@
                 }
 
                 const joined = allLinks.join('\r\n');
-                lastCopiedLinksText = joined;
                 const copyOk = joined ? await copyTextToClipboard(joined) : false;
 
                 const summary = `成功提取 ${successPostCount}/${posts.length} 贴：${allLinks.length} 条磁力/ed2k，${state.downloadAttachments ? allAttachments.length : 0} 个附件`;
-                showForumToast(allLinks.length > 0 && !copyOk ? '剪贴板写入受限，请点击再复制' : summary, 2800);
+                showForumToast(allLinks.length > 0 && !copyOk ? '剪贴板写入受限，请检查浏览器剪贴板权限' : summary, 2800);
 
                 const resultBox = document.getElementById('av-forum-result-box');
                 if (resultBox) {
@@ -5275,11 +5221,6 @@
                     <button id="av-forum-collapse-btn" title="折叠面板" style="border:1px solid #cbd5e1;background:#f8fafc;color:#475569;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:11px;">收起</button>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:6px;">
-                    <button id="av-forum-copy-post-links" class="av-forum-btn av-forum-btn-primary">复制全部帖子链接</button>
-                    <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;cursor:pointer;padding:0 2px;">
-                        <input id="av-forum-include-title" type="checkbox" ${state.copyIncludeTitle ? 'checked' : ''}>
-                        <span>复制帖子链接附带标题</span>
-                    </label>
                     <button id="av-forum-extract-links" class="av-forum-btn av-forum-btn-success">提取全部磁力/ed2k</button>
                     <div class="av-forum-btn-grid">
                         <button id="av-forum-select-all" class="av-forum-btn av-forum-btn-neutral">全选/清空</button>
@@ -5287,15 +5228,11 @@
                     </div>
                     <div class="av-forum-btn-grid">
                         <button id="av-forum-toggle-attach" class="av-forum-btn av-forum-btn-neutral">${state.downloadAttachments ? '下载附件: 开' : '下载附件: 关'}</button>
-                        <button id="av-forum-toggle-enhance" class="av-forum-btn av-forum-btn-neutral">${state.enhancePreview ? '关闭图文预览' : '开启图文预览'}</button>
-                    </div>
-                    <div class="av-forum-btn-grid">
                         <button id="av-forum-toggle-info" class="av-forum-btn av-forum-btn-neutral">${state.showResultBox ? '隐藏提示框' : '显示提示框'}</button>
-                        <button id="av-forum-recopy" class="av-forum-btn av-forum-btn-neutral">再复制上次</button>
                     </div>
                 </div>
                 <div id="av-forum-result-box" class="av-forum-result-box" style="display:${state.showResultBox ? 'block' : 'none'};">
-                    未勾选帖子时点击按钮，将默认操作本页全部帖子；若需下载附件请允许本站弹出窗口。
+                    未勾选帖子时点击按钮，将默认提取本页全部帖子资源；若需下载附件请允许本站弹出窗口。
                 </div>
             `;
 
@@ -5305,11 +5242,6 @@
                 state.collapsed = true;
                 saveForumState();
                 renderPanel();
-            });
-            panel.querySelector('#av-forum-copy-post-links').addEventListener('click', handleCopyPostLinks);
-            panel.querySelector('#av-forum-include-title').addEventListener('change', (e) => {
-                state.copyIncludeTitle = Boolean(e.target.checked);
-                saveForumState();
             });
             panel.querySelector('#av-forum-extract-links').addEventListener('click', handleExtractResources);
             panel.querySelector('#av-forum-select-all').addEventListener('click', () => {
@@ -5337,27 +5269,12 @@
                 e.currentTarget.textContent = state.downloadAttachments ? '下载附件: 开' : '下载附件: 关';
                 saveForumState();
             });
-            panel.querySelector('#av-forum-toggle-enhance').addEventListener('click', (e) => {
-                state.enhancePreview = !state.enhancePreview;
-                e.currentTarget.textContent = state.enhancePreview ? '关闭图文预览' : '开启图文预览';
-                saveForumState();
-                if (state.enhancePreview) runPreviewEnhancement();
-                else removeAllPreviews();
-            });
             panel.querySelector('#av-forum-toggle-info').addEventListener('click', (e) => {
                 state.showResultBox = !state.showResultBox;
                 e.currentTarget.textContent = state.showResultBox ? '隐藏提示框' : '显示提示框';
                 const box = panel.querySelector('#av-forum-result-box');
                 if (box) box.style.display = state.showResultBox ? 'block' : 'none';
                 saveForumState();
-            });
-            panel.querySelector('#av-forum-recopy').addEventListener('click', async () => {
-                if (!lastCopiedLinksText) {
-                    showForumToast('暂无可复用的上次复制结果');
-                    return;
-                }
-                const ok = await copyTextToClipboard(lastCopiedLinksText);
-                showForumToast(ok ? '已重新写入剪贴板' : '复制失败，请检查权限');
             });
         }
 
@@ -5369,15 +5286,11 @@
         }
         renderPanel();
         updatePanelStats();
-        if (state.enhancePreview) {
-            runPreviewEnhancement();
-        }
 
         // 监听 Discuz 下一页 / 加载更多新主题
         const handleLazyAppend = () => {
             setTimeout(() => {
                 syncForumRows();
-                if (state.enhancePreview) runPreviewEnhancement();
             }, 1500);
         };
         document.querySelectorAll('a.bm_h, tbody#forumnewshow a').forEach(btn => {
@@ -5391,8 +5304,12 @@
         if (typeof window === 'undefined' || typeof document === 'undefined') return;
         const host = String(window.location.hostname || '').toLowerCase();
         if (host === '115.com' || host.endsWith('.115.com')) {
-            window.addEventListener('load', () => setTimeout(initUI, 1500));
-            setInterval(() => { if (!document.getElementById('av-dedup-launcher')) initUI(); }, 2500);
+            if (document.readyState === 'complete') setTimeout(initUI, 350);
+            else window.addEventListener('load', () => setTimeout(initUI, 600));
+            setInterval(() => {
+                const el = document.getElementById('av-dedup-launcher');
+                if (!el || el.dataset.avVersion !== APP_VERSION) initUI();
+            }, 2000);
             return;
         }
         if (isForumSiteContext(document.title, window.location.href)) {
@@ -5436,7 +5353,6 @@
             extractTidFromHref,
             isForumAttachmentHref,
             extractThreadResources,
-            formatThreadLinksText,
             filterForumPostByTime,
             resolvePosterUrl,
             normalizeSearchCodeForSite,
@@ -5444,6 +5360,7 @@
             parseJavBusHtml,
             parseJavDbHtml,
             parseAvsoxHtml,
+            parseJav321Html,
             buildPosterFetchPlan
         };
     }

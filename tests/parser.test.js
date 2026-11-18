@@ -27,7 +27,6 @@ const {
     extractTidFromHref,
     isForumAttachmentHref,
     extractThreadResources,
-    formatThreadLinksText,
     filterForumPostByTime,
     resolvePosterUrl,
     normalizeSearchCodeForSite,
@@ -35,11 +34,12 @@ const {
     parseJavBusHtml,
     parseJavDbHtml,
     parseAvsoxHtml,
+    parseJav321Html,
     buildPosterFetchPlan
 } = require('../115-av-dedup-helper.user.js');
 
 test('版本号导出校验', () => {
-    assert.equal(APP_VERSION, '5.2.0');
+    assert.equal(APP_VERSION, '5.2.1');
 });
 
 test('标准有码、特异片商及自定义前缀/屏蔽词识别', () => {
@@ -256,22 +256,7 @@ test('帖子资源提取（代码块磁力/Base32磁力/ed2k/附件大小写与�
     assert.equal(isForumAttachmentHref('forum.php?mod=attachment&aid=1', 'cover.jpg'), false);
 });
 
-test('一键复制全部帖子链接格式化 & 本地日期时间筛选', () => {
-    const posts = [
-        { tid: '1', url: 'https://www.sehuatang.org/forum.php?mod=viewthread&tid=1', title: '标题一', code: 'ABW-015' },
-        { tid: '1', url: 'https://www.sehuatang.org/forum.php?mod=viewthread&tid=1', title: '重复URL', code: 'ABW-015' },
-        { tid: '2', url: 'javascript:alert(1)', title: '非法协议', code: '' },
-        { tid: '3', url: 'https://www.sehuatang.org/forum.php?mod=viewthread&tid=3', title: '标题三', code: '' }
-    ];
-    assert.equal(
-        formatThreadLinksText(posts, { includeTitle: false }),
-        'https://www.sehuatang.org/forum.php?mod=viewthread&tid=1\nhttps://www.sehuatang.org/forum.php?mod=viewthread&tid=3'
-    );
-    assert.equal(
-        formatThreadLinksText(posts, { includeTitle: true }),
-        '[ABW-015] 标题一 https://www.sehuatang.org/forum.php?mod=viewthread&tid=1\n标题三 https://www.sehuatang.org/forum.php?mod=viewthread&tid=3'
-    );
-
+test('本地日期时间筛选（防跨时区偏移与无效日期兜底）', () => {
     const now = new Date(2026, 10, 18, 15, 30, 0); // 2026-11-18 local
     assert.equal(filterForumPostByTime('2026-11-18', 1, now), true);
     assert.equal(filterForumPostByTime('2026-11-17', 1, now), false);
@@ -301,6 +286,8 @@ test('高清海报检索计划、番号精确边界匹配与相对 URL 解析', 
     assert.equal(stdPlan[1].url, 'https://www.javbus.com/search/IPZ-405');
     assert.equal(stdPlan[2].site, 'javdb');
     assert.equal(stdPlan[3].site, 'avsox');
+    assert.equal(stdPlan[4].site, 'jav321');
+    assert.equal(stdPlan[4].method, 'POST');
 
     const fc2Plan = buildPosterFetchPlan('FC2-PPV-3456789', 'javbus');
     assert.equal(fc2Plan[0].site, 'javdb'); // FC2 自动跳过 JavBus 直达 JavDB/AVSOX
@@ -351,6 +338,15 @@ test('JavBus / JavDB / AVSOX 高清封面与搜索结果 HTML 解析', () => {
     assert.equal(avsoxSearch.kind, 'search_hit');
     assert.equal(avsoxSearch.source, 'AVSOX');
     assert.equal(avsoxSearch.detailUrl, 'https://avsox.click/cn/movie/abc');
+
+    const j321Detail = parseJav321Html(
+        `<div class="col-md-12"><img class="img-responsive" src="https://pics.dmm.co.jp/digital/video/1start00668/1start00668pl.jpg"></div>`,
+        'https://www.jav321.com/video/1start00668',
+        'START-668'
+    );
+    assert.equal(j321Detail.kind, 'detail');
+    assert.equal(j321Detail.source, 'Jav321');
+    assert.equal(j321Detail.posterUrl, 'https://pics.dmm.co.jp/digital/video/1start00668/1start00668pl.jpg');
 
     const blocked = parseJavBusHtml('<html><title>Just a moment...</title></html>', 'https://www.javbus.com/IPZ-405', 'IPZ-405');
     assert.equal(blocked.kind, 'blocked');
