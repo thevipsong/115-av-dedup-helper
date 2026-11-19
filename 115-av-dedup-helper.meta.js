@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         老司机工作台
 // @namespace    https://github.com/thevipsong/115-av-dedup-helper
-// @version      5.3.1
+// @version      5.3.2
 // @description  老司机工作台：专为115网盘与98堂/色花堂打造的一体化影库整理神器。网盘端支持SHA1同源查重、智能优选、模板重命名、归档提取、自动检索高清海报、夜间模式、清单查漏与Anti-WAF装甲；论坛端支持版块与时间快选、批量提取磁力/ed2k/附件，并跨站自动标记[115已有]，内置自动检查与一键升级。
 // @author       thevipsong
 // @license      MIT
@@ -25,6 +25,7 @@
 // @connect      avsox.click
 // @connect      jav321.com
 // @connect      dmm.co.jp
+// @connect      dmm.com
 // @connect      jdbstatic.com
 // @connect      airav.wiki
 // @connect      123av.com

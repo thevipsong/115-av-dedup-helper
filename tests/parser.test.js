@@ -41,13 +41,14 @@ const {
     parse123AvHtml,
     parseJavTrailersHtml,
     parseFc2PageHtml,
+    buildDmmCandidatePosterUrls,
     buildPosterFetchPlan,
     compareSemver,
     parseUserscriptVersionFromMeta
 } = require('../115-av-dedup-helper.user.js');
 
 test('版本号导出校验', () => {
-    assert.equal(APP_VERSION, '5.3.1');
+    assert.equal(APP_VERSION, '5.3.2');
 });
 
 test('标准有码、特异片商及自定义前缀/屏蔽词识别', () => {
@@ -375,13 +376,33 @@ test('JavBus / JavDB / AVSOX 高清封面与搜索结果 HTML 解析', () => {
     assert.equal(avsoxSearch.detailUrl, 'https://avsox.click/cn/movie/abc');
 
     const j321Detail = parseJav321Html(
-        `<div class="col-md-12"><img class="img-responsive" src="https://pics.dmm.co.jp/digital/video/1start00668/1start00668pl.jpg"></div>`,
+        `<div class="col-md-12"><img class="img-responsive" src="https://pics.dmm.co.jp/digital/video/1start00668/1start00668ps.jpg"></div>`,
         'https://www.jav321.com/video/1start00668',
         'START-668'
     );
     assert.equal(j321Detail.kind, 'detail');
     assert.equal(j321Detail.source, 'Jav321');
     assert.equal(j321Detail.posterUrl, 'https://pics.dmm.co.jp/digital/video/1start00668/1start00668pl.jpg');
+
+    const j321SearchExact = parseJav321Html(
+        `<div class="panel-heading"><h3>初恋の養護教諭 jur-956 風間ゆみ</h3></div><div class="panel-body"><img class="img-responsive" src="http://pics.dmm.co.jp/mono/movie/adult/jur956/jur956ps.jpg"><video poster="http://pics.dmm.co.jp//digital/video/jur00956/jur00956pl.jpg"></video><span>2026-11-06</span></div>`,
+        'https://www.jav321.com/search',
+        'JUR-956'
+    );
+    assert.equal(j321SearchExact.kind, 'detail');
+    assert.equal(j321SearchExact.source, 'Jav321');
+    assert.equal(j321SearchExact.posterUrl, 'https://pics.dmm.co.jp/digital/video/jur00956/jur00956pl.jpg');
+    assert.equal(j321SearchExact.date, '2026-11-06');
+
+    const dmmUrls = buildDmmCandidatePosterUrls('JUR-956');
+    assert.ok(dmmUrls.includes('https://pics.dmm.co.jp/digital/video/jur00956/jur00956pl.jpg'));
+    assert.ok(dmmUrls.includes('https://pics.dmm.co.jp/mono/movie/adult/jur956/jur956pl.jpg'));
+    assert.deepEqual(buildDmmCandidatePosterUrls('FC2-PPV-1234567'), []);
+
+    const blocked = parseJavBusHtml('<html><title>Just a moment...</title></html>', 'https://www.javbus.com/IPZ-405', 'IPZ-405');
+    assert.equal(blocked.kind, 'blocked');
+    const jbVerify = parseJavBusHtml('<html><title>Age Verification JavBus</title><body>driver-verify</body></html>', 'https://www.javbus.com/JUR-956', 'JUR-956');
+    assert.equal(jbVerify.kind, 'blocked');
 
     const airavSearch = parseAiravHtml(
         `<a href="/cn/video/IPZ-405"><img data-src="https://wiki-img.airav.wiki/storage/big_pic/ipz-405.jpg"><h5>IPZ-405 示例标题</h5></a>`,
@@ -449,9 +470,6 @@ test('JavBus / JavDB / AVSOX 高清封面与搜索结果 HTML 解析', () => {
     assert.equal(fc2Search.kind, 'search_hit');
     assert.equal(fc2Search.source, 'FC2CMADB');
     assert.equal(fc2Search.detailUrl, 'https://fc2cmadb.com/articles/3456789');
-
-    const blocked = parseJavBusHtml('<html><title>Just a moment...</title></html>', 'https://www.javbus.com/IPZ-405', 'IPZ-405');
-    assert.equal(blocked.kind, 'blocked');
 });
 
 test('自动更新语义版本比对与 .meta.js 元信息同步校验', () => {

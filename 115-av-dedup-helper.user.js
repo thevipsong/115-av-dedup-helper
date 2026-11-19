@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         老司机工作台
 // @namespace    https://github.com/thevipsong/115-av-dedup-helper
-// @version      5.3.1
+// @version      5.3.2
 // @description  老司机工作台：专为115网盘与98堂/色花堂打造的一体化影库整理神器。网盘端支持SHA1同源查重、智能优选、模板重命名、归档提取、自动检索高清海报、夜间模式、清单查漏与Anti-WAF装甲；论坛端支持版块与时间快选、批量提取磁力/ed2k/附件，并跨站自动标记[115已有]，内置自动检查与一键升级。
 // @author       thevipsong
 // @license      MIT
@@ -25,6 +25,7 @@
 // @connect      avsox.click
 // @connect      jav321.com
 // @connect      dmm.co.jp
+// @connect      dmm.com
 // @connect      jdbstatic.com
 // @connect      airav.wiki
 // @connect      123av.com
@@ -38,7 +39,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '5.3.1';
+    const APP_VERSION = '5.3.2';
     const SCRIPT_UPDATE_META_URL = 'https://raw.githubusercontent.com/thevipsong/115-av-dedup-helper/main/115-av-dedup-helper.meta.js';
     const SCRIPT_UPDATE_CDN_META_URL = 'https://cdn.jsdelivr.net/gh/thevipsong/115-av-dedup-helper@main/115-av-dedup-helper.meta.js';
     const SCRIPT_UPDATE_DOWNLOAD_URL = 'https://raw.githubusercontent.com/thevipsong/115-av-dedup-helper/main/115-av-dedup-helper.user.js';
@@ -1212,6 +1213,7 @@
         const cleanCode = encodeURIComponent(code);
         if (site === 'javdb') return `https://javdb.com/search?q=${cleanCode}&f=all`;
         if (site === 'avsox') return `https://avsox.click/cn/search/${cleanCode}`;
+        if (site === 'jav321') return 'https://www.jav321.com/search';
         if (site === 'airav') return `https://www.airav.wiki/cn/search?keyword=${cleanCode}`;
         if (site === '123av') return `https://123av.com/zh/search?keyword=${cleanCode}`;
         if (site === 'javtrailers') return `https://javtrailers.com/search/${cleanCode}`;
@@ -1271,8 +1273,8 @@
     function isHtmlChallengePage(html) {
         const raw = String(html || '');
         if (!raw) return false;
-        return /<title>\s*(?:Just a moment|Attention Required|请稍候|Access denied)/i.test(raw) ||
-            /cf-browser-verification|challenge-platform|__cf_chl_opt/i.test(raw);
+        return /<title>\s*(?:Just a moment|Attention Required|请稍候|Access denied|Age Verification)/i.test(raw) ||
+            /cf-browser-verification|challenge-platform|__cf_chl_opt|driver-verify|Due to copyright restrictions|由於版權限制|你是否已經成年/i.test(raw);
     }
 
     function decodeBasicHtmlEntities(str) {
@@ -1489,25 +1491,45 @@
         return res;
     }
 
+    function upgradeDmmCoverUrl(url) {
+        let s = String(url || '').replace(/dmm\.co\.jp\/+/gi, 'dmm.co.jp/');
+        if (!s) return '';
+        if (s.startsWith('http://pics.dmm.co.jp')) s = s.replace(/^http:/, 'https:');
+        return s.replace(/\/pics\.dmm\.co\.jp\/digital\/video\/([^/?#]+)\/\1ps\.jpg/i, '/pics.dmm.co.jp/digital/video/$1/$1pl.jpg')
+                .replace(/\/pics\.dmm\.co\.jp\/mono\/movie\/adult\/([^/?#]+)\/\1ps\.jpg/i, '/pics.dmm.co.jp/mono/movie/adult/$1/$1pl.jpg');
+    }
+
     function parseJav321Html(html, pageUrl, targetCode) {
         if (isHtmlChallengePage(html)) return { kind: 'blocked' };
         const raw = String(html || '');
         const doc = parseDomDoc(raw);
 
         if (doc) {
-            const isVideoPage = /\/video\//i.test(String(pageUrl || ''));
-            const mainImg = doc.querySelector('.panel-body img.img-responsive, .col-md-12 img.img-responsive');
-            const imgSrc = resolvePosterUrl(mainImg?.getAttribute('src'), pageUrl);
-            if (isVideoPage && imgSrc) {
-                const h3 = (doc.querySelector('h3')?.textContent || '').trim();
-                const dateM = (doc.querySelector('.panel-body')?.textContent || '').match(/\d{4}-\d{2}-\d{2}/);
-                return {
-                    kind: 'detail', source: 'Jav321', posterUrl: imgSrc, pageUrl,
-                    title: h3, date: dateM ? dateM[0] : '', actors: []
-                };
+            const h3 = (doc.querySelector('h3')?.textContent || '').trim();
+            const panelText = doc.querySelector('.panel-body, .panel')?.textContent || '';
+            const isMatch = isMatchingAvCode(h3, targetCode) || isMatchingAvCode(panelText, targetCode);
+            const isVideoUrl = /\/video\//i.test(String(pageUrl || ''));
+            const isDetail = isVideoUrl || (isMatch && Boolean(doc.querySelector('video[poster], .panel-body, .panel-heading, img.img-responsive')));
+
+            if (isDetail) {
+                const videoPoster = doc.querySelector('video[poster]')?.getAttribute('poster');
+                const mainImg = doc.querySelector('.panel-body img.img-responsive, .col-md-12 img.img-responsive, img.img-responsive');
+                const rawImg = videoPoster || mainImg?.getAttribute('src') || parseOgImageFromHtml(raw, pageUrl, doc);
+                const posterUrl = upgradeDmmCoverUrl(resolvePosterUrl(rawImg, pageUrl));
+                if (posterUrl) {
+                    const dateM = (panelText || raw).match(/\d{4}-\d{2}-\d{2}/);
+                    const stars = Array.from(doc.querySelectorAll('a[href*="/star/"]')).map(a => a.textContent.trim()).filter(Boolean);
+                    return {
+                        kind: 'detail',
+                        source: 'Jav321',
+                        posterUrl,
+                        pageUrl,
+                        title: h3,
+                        date: dateM ? dateM[0] : '',
+                        actors: stars.slice(0, 4)
+                    };
+                }
             }
-            const og = isVideoPage ? parseOgImageFromHtml(raw, pageUrl, doc) : '';
-            if (og) return { kind: 'detail', source: 'Jav321', posterUrl: og, pageUrl, title: '', date: '', actors: [] };
 
             const links = doc.querySelectorAll('a[href*="/video/"]');
             for (const a of links) {
@@ -1519,12 +1541,32 @@
             return { kind: 'none' };
         }
 
-        if (/\/video\//i.test(String(pageUrl || ''))) {
+        const h3M = raw.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i);
+        const h3Text = h3M ? decodeBasicHtmlEntities(h3M[1]) : '';
+        const isMatch = isMatchingAvCode(h3Text, targetCode) || isMatchingAvCode(raw.slice(0, 4000), targetCode);
+        const isVideoUrl = /\/video\//i.test(String(pageUrl || ''));
+        const hasDetailMarks = /vjs_sample_player|panel-body|img-responsive/i.test(raw);
+
+        if (isVideoUrl || (isMatch && hasDetailMarks)) {
+            const videoM = raw.match(/<video\b[^>]*\bposter=["']([^"']+)["'][^>]*>/i);
             const og = parseOgImageFromHtml(raw, pageUrl, null);
             const respImg = raw.match(/<img\b([^>]*\bclass=["'][^"']*img-responsive[^"']*["'][^>]*)>/i);
-            const posterUrl = resolvePosterUrl(respImg ? parseHtmlAttr(respImg[1], 'src') : og, pageUrl) || og;
-            if (posterUrl) return { kind: 'detail', source: 'Jav321', posterUrl, pageUrl, title: '', date: '', actors: [] };
+            const rawImg = (videoM && videoM[1]) || (respImg ? parseHtmlAttr(respImg[1], 'src') : og) || og;
+            const posterUrl = upgradeDmmCoverUrl(resolvePosterUrl(rawImg, pageUrl));
+            if (posterUrl) {
+                const dateM = raw.match(/\d{4}-\d{2}-\d{2}/);
+                return {
+                    kind: 'detail',
+                    source: 'Jav321',
+                    posterUrl,
+                    pageUrl,
+                    title: h3Text,
+                    date: dateM ? dateM[0] : '',
+                    actors: []
+                };
+            }
         }
+
         const aRe = /<a\b([^>]*\bhref=["'][^"']*\/video\/[^"']*["'][^>]*)>([\s\S]*?)<\/a>/gi;
         let am;
         while ((am = aRe.exec(raw)) !== null) {
@@ -2766,6 +2808,10 @@
                         if (res.status === 404 || res.status === 410 || res.status === 403) {
                             return resolve({ blobUrl: '', dataUrl: '', blob: null, missing: true });
                         }
+                        const finalUrl = String(res.finalUrl || '').toLowerCase();
+                        if (finalUrl.includes('now_printing') || finalUrl.includes('none.gif') || finalUrl.includes('blank.gif') || finalUrl.includes('noposter')) {
+                            return resolve({ blobUrl: '', dataUrl: '', blob: null, missing: true });
+                        }
                         const blob = res.response;
                         const mime = String((blob && blob.type) || '').toLowerCase();
                         if (res.status >= 200 && res.status < 300 && blob && blob.size > 2048 && !mime.includes('text/')) {
@@ -2872,13 +2918,70 @@
         return winner;
     }
 
+    function buildDmmCandidatePosterUrls(code) {
+        const clean = String(code || '').trim().toUpperCase();
+        if (!clean || clean.startsWith('FC2-') || clean.startsWith('CARIB-') || clean.startsWith('1PONDO-') || clean.startsWith('HEYZO-') || clean.startsWith('TOKYO-HOT-')) {
+            return [];
+        }
+        const m = clean.match(/^([A-Z0-9]+?)[-_ ]*(\d+)$/i);
+        if (!m) return [];
+        const prefix = m[1].toLowerCase();
+        const num = m[2];
+        const pad5 = num.padStart(5, '0');
+        const pad3 = num.padStart(3, '0');
+        const candidates = [
+            `https://pics.dmm.co.jp/digital/video/${prefix}${pad5}/${prefix}${pad5}pl.jpg`,
+            `https://pics.dmm.co.jp/mono/movie/adult/${prefix}${num}/${prefix}${num}pl.jpg`,
+            `https://pics.dmm.co.jp/mono/movie/adult/${prefix}${pad5}/${prefix}${pad5}pl.jpg`,
+            `https://pics.dmm.co.jp/mono/movie/adult/${prefix}${pad3}/${prefix}${pad3}pl.jpg`,
+            `https://pics.dmm.co.jp/digital/video/1${prefix}${pad5}/1${prefix}${pad5}pl.jpg`,
+            `https://pics.dmm.co.jp/digital/video/118${prefix}${pad5}/118${prefix}${pad5}pl.jpg`,
+            `https://pics.dmm.co.jp/digital/video/h_${prefix}${pad5}/h_${prefix}${pad5}pl.jpg`
+        ];
+        return Array.from(new Set(candidates));
+    }
+
+    async function tryProbeDmmDirectPoster(code) {
+        const candidates = buildDmmCandidatePosterUrls(code);
+        if (candidates.length === 0) return null;
+
+        const wave1 = candidates.slice(0, 3);
+        const wave2 = candidates.slice(3);
+
+        const testUrl = async (url) => {
+            const assets = await gmFetchImageAssets(url, '', 2200);
+            if (assets && !assets.missing && (assets.blobUrl || assets.dataUrl)) {
+                return {
+                    kind: 'detail',
+                    source: 'DMM',
+                    posterUrl: url,
+                    blobUrl: assets.blobUrl || '',
+                    dataUrl: assets.dataUrl || '',
+                    blob: assets.blob || null,
+                    pageUrl: '',
+                    title: '',
+                    date: '',
+                    actors: []
+                };
+            }
+            return null;
+        };
+
+        const res1 = await raceFirstTruthful(wave1.map(testUrl));
+        if (res1) return res1;
+        if (wave2.length > 0) {
+            return await raceFirstTruthful(wave2.map(testUrl));
+        }
+        return null;
+    }
+
     async function runPosterSitePipeline(siteSteps, cleanCode) {
         for (const step of siteSteps) {
             const page = await gmFetchText(step.url, '', {
                 method: step.method || 'GET',
                 body: step.body,
                 contentType: step.contentType,
-                timeoutMs: 4500
+                timeoutMs: 3800
             });
             if (!page) continue;
 
@@ -2889,7 +2992,7 @@
             if (parsed.kind === 'detail') {
                 candidate = parsed;
             } else if (parsed.kind === 'search_hit') {
-                const detailPage = await gmFetchText(parsed.detailUrl, page.finalUrl || step.url, { timeoutMs: 4000 });
+                const detailPage = await gmFetchText(parsed.detailUrl, page.finalUrl || step.url, { timeoutMs: 3200 });
                 if (detailPage) {
                     const detailParsed = parseSiteHtmlByName(step.site, detailPage.html, detailPage.finalUrl || parsed.detailUrl, cleanCode);
                     if (detailParsed.kind === 'detail') {
@@ -2942,8 +3045,12 @@
                     }
                 }
 
-                // 2. 分站分组后阶梯竞速检索高清封面（首选站点微领先 + 多源并行容灾）
-                const plan = buildPosterFetchPlan(cleanCode, settings.preferredSearchSite || 'javbus');
+                // 2. 毫秒级直连探测：DMM CloudFront CDN（针对绝大多数日本有码番号，0爬虫、0盾、~200ms秒出图）
+                const dmmProbeTask = tryProbeDmmDirectPoster(cleanCode);
+
+                // 3. 分站分组后阶梯竞速检索高清封面（首选站点微领先 + 多源并行容灾）
+                const preferred = settings.preferredSearchSite || 'javbus';
+                const plan = buildPosterFetchPlan(cleanCode, preferred);
                 const siteOrder = [];
                 const siteStepsMap = new Map();
                 for (const step of plan) {
@@ -2954,17 +3061,27 @@
                     siteStepsMap.get(step.site).push(step);
                 }
 
-                const makeSiteTask = (siteName) => () => runPosterSitePipeline(siteStepsMap.get(siteName) || [], cleanCode);
-                const wave1Sites = siteOrder.slice(0, 3);
-                const wave2Tasks = siteOrder.slice(3).map(makeSiteTask);
+                // 优先把 jav321 置入第一梯队，避免在被封锁的站点后长时间排队
+                let wave1Sites;
+                if (preferred === 'javbus' && siteStepsMap.has('jav321')) {
+                    wave1Sites = ['javbus', 'jav321', 'javdb'];
+                } else {
+                    wave1Sites = siteOrder.slice(0, 3);
+                }
+                const wave1Set = new Set(wave1Sites);
+                const wave2Tasks = siteOrder.filter(s => !wave1Set.has(s)).map(s => () => runPosterSitePipeline(siteStepsMap.get(s) || [], cleanCode));
+                const wave1Tasks = wave1Sites.map(s => () => runPosterSitePipeline(siteStepsMap.get(s) || [], cleanCode));
 
-                const wave1Runner = () => raceFirstWithGrace(
-                    [makeSiteTask(wave1Sites[0])],
-                    wave1Sites.slice(1).map(makeSiteTask),
+                const siteRaceRunner = () => raceFirstWithGrace(
+                    [wave1Tasks[0]],
+                    wave1Tasks.slice(1),
                     180
                 );
 
-                const winner = await raceFirstWithGrace([wave1Runner], wave2Tasks, 1400);
+                const winner = await raceFirstTruthful([
+                    dmmProbeTask,
+                    raceFirstWithGrace([siteRaceRunner], wave2Tasks, 900)
+                ]);
                 if (winner) {
                     const metaToSave = {
                         posterUrl: winner.posterUrl,
@@ -4601,6 +4718,7 @@
                             <div style="font-size:13px; font-weight:700; margin-bottom:6px;">2. 元数据外链 &amp; 高清海报策略</div>
                             <select id="set-search-site" class="av-input" style="width:100%; padding:7px 10px; border-radius:6px; font-size:12px; margin-bottom:6px;">
                                 <option value="javbus">优先 JavBus</option>
+                                <option value="jav321">优先 Jav321 (直连高可用)</option>
                                 <option value="javdb">优先 JavDB</option>
                                 <option value="avsox">优先 AVSOX</option>
                                 <option value="airav">优先 AirAV</option>
@@ -5962,6 +6080,7 @@
             parse123AvHtml,
             parseJavTrailersHtml,
             parseFc2PageHtml,
+            buildDmmCandidatePosterUrls,
             buildPosterFetchPlan,
             compareSemver,
             parseUserscriptVersionFromMeta

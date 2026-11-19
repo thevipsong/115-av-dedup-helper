@@ -8,7 +8,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Supported-green.svg)](https://www.tampermonkey.net/)
-[![Version](https://img.shields.io/badge/Version-5.3.1-blue.svg)](https://github.com/thevipsong/115-av-dedup-helper)
+[![Version](https://img.shields.io/badge/Version-5.3.2-blue.svg)](https://github.com/thevipsong/115-av-dedup-helper)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/thevipsong/115-av-dedup-helper/pulls)
 
 [核心特性](#-核心特性) • [界面预览](#-界面预览) • [安装方式](#-安装指南) • [使用教程](#-使用教程) • [版本记录](#-版本演进记录) • [免责声明](#-免责声明)
@@ -184,6 +184,16 @@ node --test tests/parser.test.js
 ---
 
 ## 📑 版本演进记录
+
+### v5.3.2 (DMM 毫秒级直连 CDN 引擎 · 修复 Jav321 解析致命 Bug · WAF 快速熔断)
+- **⚡ 新增 DMM 官方 CloudFront 封面毫秒级直连预测器**：
+  - 针对绝大多数日本有码番号（如 `JUR-956`、`IPZ-405`、`SNIS-488`、`MIDV-250` 等占 90%+ 影片），无需爬取任何第三方网页、无需执行验证码，直接通过 AWS CloudFront CDN（`pics.dmm.co.jp`）发起探测，**150~300ms 极速秒出官方高清原图**！
+- **🐛 修复 Jav321 搜索精确命中详情被误抛弃的严重 Bug**：
+  - 修复 Jav321 搜索精确命中时在 `/search` 原地返回影片详情因缺少 `/video/` 被误判为“无结果”抛弃的问题；支持自动提取 `pl.jpg` 高清大图、发行日期、标题及演员信息，直连命中率与速度大幅提升。
+- **🛡️ JavBus 验证墙与 Cloudflare 5秒盾快速熔断**：
+  - 将 JavBus `Age Verification / driver-verify`（老司机成年确认页）及 Cloudflare/地区版权限制纳入 WAF 熔断特征库，遇拦截立即放弃该站点后续搜索，不再无谓空耗 4.5s 超时重试。
+- **⚙️ 偏好设置新增「优先 Jav321 (直连高可用)」**：
+  - 将 Jav321 提升至第一梯队并发竞速链路，并在偏好设置中提供独立选项，方便国内直连环境快速开图。
 
 ### v5.3.1 (7 源阶梯并发海报引擎 · 当前页后台预热 · 480×310 高清大封面预览)
 - **⚡ 封面获取速度大幅提速（告别串行排队超时）**：
