@@ -4,11 +4,11 @@
 
 # 老司机工作台
 
-**专为 115 网盘与 98堂/色花堂 打造的一体化影库整理、高清海报刮削与资源收割工作台**
+**专为 115 网盘与 98堂/色花堂 打造的一体化影库整理与资源收割工作台**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Supported-green.svg)](https://www.tampermonkey.net/)
-[![Version](https://img.shields.io/badge/Version-5.3.2-blue.svg)](https://github.com/thevipsong/115-av-dedup-helper)
+[![Version](https://img.shields.io/badge/Version-5.4.0-blue.svg)](https://github.com/thevipsong/115-av-dedup-helper)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/thevipsong/115-av-dedup-helper/pulls)
 
 [核心特性](#-核心特性) • [界面预览](#-界面预览) • [安装方式](#-安装指南) • [使用教程](#-使用教程) • [版本记录](#-版本演进记录) • [免责声明](#-免责声明)
@@ -47,9 +47,9 @@
   - **外挂字幕自动保护与同步**：识别并保护 `.srt`/`.ass`/`.ssa` 字幕文件避免被当成杂质误删，并在重命名视频时保留 `.chs`/`.zh` 等语言标识一并同步更名。
   - **防后悔撤销记录**：每次重命名自动保存还原快照（最近 10 批），支持一键批量恢复原名与导出映射表。
 
-- 🔍 **元数据直达 & 缩略图悬浮预览 & 清单查漏 (v5.0 新增)**
+- 🔍 **元数据外链直达 & 影库清单查漏**
   - **外链详情检索**：一键跳转 **JavBus / JavDB / AVSOX / AirAV / 123AV / JavTrailers** 检索对应番号信息（可在设置中切换偏好站点）。
-  - **自动高清海报悬浮预览 (v5.3 极速并发增强)**：悬停行内预览图标即展示 **480×310 高清大封面**（支持自适应视口缩放），后端采用 **7 源阶梯竞速引擎**（**JavBus / JavDB / AVSOX / Jav321 / AirAV / 123AV / JavTrailers**，FC2 专属直连 **FC2PPVDB / FC2CMADB**）并配合当前页温和后台预加载，首图秒开与防盗链 Blob + IndexedDB 7 天持久化缓存（可在设置切换“总是自动检索 / 仅缺失时检索 / 关闭”）。
+  - **清爽极速交互 (v5.4 优化)**：彻底取消列表行悬浮海报检索与后台预加载，消除鼠标划过时的卡顿与无谓网络请求，界面纯粹轻盈、操作丝滑响应。
   - **导出与比对查漏**：支持导出 **TXT / CSV（带 BOM 防乱码）/ Markdown** 番号库；支持粘贴外部清单秒速比对网盘“已存在”与“缺失待补”。
 
 - ⏳ **IndexedDB 本地秒开缓存 & 忽略目录名单 (v5.0 新增)**
@@ -184,6 +184,12 @@ node --test tests/parser.test.js
 ---
 
 ## 📑 版本演进记录
+
+### v5.4.0 (极简纯粹升级 · 取消列表海报悬浮检索 · 消除悬停卡顿与网络开销)
+- **⚡ 移除列表行海报悬浮检索与后台预热**：
+  - 彻底取消列表行中的悬停预览触发器（眼睛图标）及浮动大卡片，并移除后台自动预取网络队列，全面消除鼠标移过列表时的渲染卡顿与网络请求开销；
+  - 列表交互恢复纯粹轻盈与秒级响应，专注核心的「查重、识别、规范改名、归档分类与资源收割」；
+  - 偏好设置中精简移除「高清海报策略」选项，保留纯粹实用的「元数据外链站点偏好」。
 
 ### v5.3.2 (DMM 毫秒级直连 CDN 引擎 · 修复 Jav321 解析致命 Bug · WAF 快速熔断)
 - **⚡ 新增 DMM 官方 CloudFront 封面毫秒级直连预测器**：

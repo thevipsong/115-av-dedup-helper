@@ -48,7 +48,7 @@ const {
 } = require('../115-av-dedup-helper.user.js');
 
 test('版本号导出校验', () => {
-    assert.equal(APP_VERSION, '5.3.2');
+    assert.equal(APP_VERSION, '5.4.0');
 });
 
 test('标准有码、特异片商及自定义前缀/屏蔽词识别', () => {

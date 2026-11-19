@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         老司机工作台
 // @namespace    https://github.com/thevipsong/115-av-dedup-helper
-// @version      5.3.2
-// @description  老司机工作台：专为115网盘与98堂/色花堂打造的一体化影库整理神器。网盘端支持SHA1同源查重、智能优选、模板重命名、归档提取、自动检索高清海报、夜间模式、清单查漏与Anti-WAF装甲；论坛端支持版块与时间快选、批量提取磁力/ed2k/附件，并跨站自动标记[115已有]，内置自动检查与一键升级。
+// @version      5.4.0
+// @description  老司机工作台：专为115网盘与98堂/色花堂打造的一体化影库整理神器。网盘端支持SHA1同源查重、智能优选、模板重命名、归档提取、夜间模式、清单查漏与Anti-WAF装甲；论坛端支持版块与时间快选、批量提取磁力/ed2k/附件，并跨站自动标记[115已有]，内置自动检查与一键升级。
 // @author       thevipsong
 // @license      MIT
 // @icon         data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22b%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%230f172a%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%231e293b%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22c%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%236366f1%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%232563eb%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22r%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2338bdf8%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23818cf8%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%2256%22%20height%3D%2256%22%20rx%3D%2214%22%20fill%3D%22url(%23b)%22%2F%3E%3Crect%20x%3D%2215%22%20y%3D%2214%22%20width%3D%2226%22%20height%3D%2233%22%20rx%3D%224.5%22%20transform%3D%22rotate(-10%2028%2030.5)%22%20fill%3D%22url(%23c)%22%20opacity%3D%22.92%22%2F%3E%3Crect%20x%3D%2220%22%20y%3D%2217%22%20width%3D%2228%22%20height%3D%2228%22%20rx%3D%225.5%22%20fill%3D%22rgba(148%2C163%2C184%2C.18)%22%20stroke%3D%22rgba(226%2C232%2C240%2C.45)%22%20stroke-width%3D%221.2%22%2F%3E%3Ccircle%20cx%3D%2234%22%20cy%3D%2231%22%20r%3D%2210%22%20fill%3D%22none%22%20stroke%3D%22url(%23r)%22%20stroke-width%3D%222.2%22%2F%3E%3Crect%20x%3D%2228.5%22%20y%3D%2227%22%20width%3D%2211%22%20height%3D%228%22%20rx%3D%221.8%22%20fill%3D%22none%22%20stroke%3D%22%23e0f2fe%22%20stroke-width%3D%221.6%22%2F%3E%3Cpolygon%20points%3D%2232.8%2C29.1%2036.6%2C31%2032.8%2C32.9%22%20fill%3D%22%23e0f2fe%22%2F%3E%3Cpath%20d%3D%22M48%209.5L49.4%2013.6L53.5%2015L49.4%2016.4L48%2020.5L46.6%2016.4L42.5%2015L46.6%2013.6Z%22%20fill%3D%22%2334d399%22%2F%3E%3C%2Fsvg%3E
@@ -39,7 +39,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '5.3.2';
+    const APP_VERSION = '5.4.0';
     const SCRIPT_UPDATE_META_URL = 'https://raw.githubusercontent.com/thevipsong/115-av-dedup-helper/main/115-av-dedup-helper.meta.js';
     const SCRIPT_UPDATE_CDN_META_URL = 'https://cdn.jsdelivr.net/gh/thevipsong/115-av-dedup-helper@main/115-av-dedup-helper.meta.js';
     const SCRIPT_UPDATE_DOWNLOAD_URL = 'https://raw.githubusercontent.com/thevipsong/115-av-dedup-helper/main/115-av-dedup-helper.user.js';
@@ -479,7 +479,7 @@
         customTemplate: '{code}{part} {tags}.{ext}',
         syncSubtitles: true,
         preferredSearchSite: 'javbus',   // 'javbus' | 'javdb' | 'avsox'
-        posterPriority: 'hd_first',      // 'hd_first' | 'fallback' | 'off'
+        posterPriority: 'off',           // 默认关闭海报悬浮检索
         autoCheckUpdate: true,           // 自动检查脚本新版本并提示升级
         ignoreFolders: [],               // Array<string>
         customPrefixes: [],              // 自定义扩展前缀白名单
@@ -3715,29 +3715,6 @@
 
         // ==================== #dedup-content 单层事件委托 ====================
         const contentBox = document.getElementById('dedup-content');
-        contentBox.addEventListener('mouseover', (e) => {
-            const trigger = e.target.closest('.thumb-trigger');
-            if (!trigger) return;
-            const fid = String(trigger.dataset.fid);
-            const activeTip = document.getElementById('av-thumb-tooltip');
-            if (activeTip && activeTip.style.display !== 'none' && activeTip.dataset.activeFid === fid) {
-                moveThumbTooltip(e);
-                return;
-            }
-            const f = allScannedFiles.find(x => String(x.fid) === fid);
-            if (f) {
-                const info = parseAvFileInfo(f.n, { customPrefixes: getSettings().customPrefixes, customBlacklist: getSettings().customBlacklist });
-                showThumbTooltip(e, { ...f, parsedCode: info ? info.code : '' });
-            }
-        });
-        contentBox.addEventListener('mousemove', (e) => { if (e.target.closest('.thumb-trigger')) moveThumbTooltip(e); });
-        contentBox.addEventListener('mouseout', (e) => {
-            const trigger = e.target.closest('.thumb-trigger');
-            if (trigger && (!e.relatedTarget || !trigger.contains(e.relatedTarget))) {
-                hideThumbTooltip();
-            }
-        });
-
         contentBox.addEventListener('click', (e) => {
             // 1. 警报条继续扫描按钮
             if (e.target.closest('#btn-continue-scan')) {
@@ -4187,7 +4164,6 @@
 
                     <div style="flex:1; overflow:hidden; margin-right:10px; min-width:0;">
                         <div style="display:flex; align-items:center; gap:5px; overflow:hidden;">
-                            <span class="thumb-trigger" data-fid="${file.fid}" style="color:var(--av-text-soft); display:inline-flex; align-items:center; padding:2px; flex-shrink:0;" title="悬停自动检索高清海报与详情">${ICONS.eye}</span>
                             <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(file.n)}">${formatFileNameHtml(file.n)}</div>
                             ${isDamaged ? `<span style="background:var(--av-rose-bg); color:var(--av-rose-fg); border:1px solid var(--av-rose-border); font-size:10px; font-weight:700; padding:1px 5px; border-radius:3px; flex-shrink:0;">疑似残损</span>` : ''}
                             ${hasSub ? `<span style="background:var(--av-sub-bg); color:var(--av-sub-fg); font-size:10px; font-weight:700; padding:1px 5px; border-radius:3px; flex-shrink:0; display:inline-flex; align-items:center; gap:2px;">${ICONS.subtitle} 字幕</span>` : ''}
@@ -4246,18 +4222,6 @@
 
         contentBox.innerHTML = html;
         updateSelectedStats();
-
-        const posterMode = settings.posterPriority || 'hd_first';
-        if (posterMode !== 'off') {
-            const prefetchCodes = [];
-            keys.forEach(key => {
-                const codeItem = (targetGroups[key] || []).find(item => item && item.parsedCode);
-                if (!codeItem) return;
-                if (posterMode === 'fallback' && codeItem.thumb) return;
-                prefetchCodes.push(codeItem.parsedCode);
-            });
-            schedulePosterPrefetch(prefetchCodes, settings);
-        }
     }
 
     async function handleSingleQuickRename(fid, btnEl) {
@@ -4715,8 +4679,8 @@
 
                     <div class="av-modal-surface" style="border:1px solid var(--av-border); border-radius:8px; padding:14px; display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                         <div>
-                            <div style="font-size:13px; font-weight:700; margin-bottom:6px;">2. 元数据外链 &amp; 高清海报策略</div>
-                            <select id="set-search-site" class="av-input" style="width:100%; padding:7px 10px; border-radius:6px; font-size:12px; margin-bottom:6px;">
+                            <div style="font-size:13px; font-weight:700; margin-bottom:6px;">2. 元数据外链检索站点</div>
+                            <select id="set-search-site" class="av-input" style="width:100%; padding:7px 10px; border-radius:6px; font-size:12px;">
                                 <option value="javbus">优先 JavBus</option>
                                 <option value="jav321">优先 Jav321 (直连高可用)</option>
                                 <option value="javdb">优先 JavDB</option>
@@ -4724,11 +4688,6 @@
                                 <option value="airav">优先 AirAV</option>
                                 <option value="123av">优先 123AV</option>
                                 <option value="javtrailers">优先 JavTrailers</option>
-                            </select>
-                            <select id="set-poster-priority" class="av-input" style="width:100%; padding:7px 10px; border-radius:6px; font-size:12px;">
-                                <option value="hd_first">总是自动检索高清海报 (推荐)</option>
-                                <option value="fallback">仅115无内置图时检索高清海报</option>
-                                <option value="off">仅显示115内置缩略图</option>
                             </select>
                         </div>
                         <div>
@@ -4795,7 +4754,6 @@
 
         selTpl.value = settings.renameTemplate;
         overlay.querySelector('#set-search-site').value = settings.preferredSearchSite;
-        overlay.querySelector('#set-poster-priority').value = settings.posterPriority || 'hd_first';
         overlay.querySelector('#set-theme').value = settings.theme || 'auto';
 
         const updatePreview = () => {
@@ -4841,7 +4799,7 @@
                 customTemplate: customInput.value.trim() || DEFAULT_SETTINGS.customTemplate,
                 syncSubtitles: overlay.querySelector('#set-sync-sub').checked,
                 preferredSearchSite: overlay.querySelector('#set-search-site').value,
-                posterPriority: overlay.querySelector('#set-poster-priority').value,
+                posterPriority: 'off',
                 autoCheckUpdate: overlay.querySelector('#set-auto-update').checked,
                 theme: overlay.querySelector('#set-theme').value,
                 customPrefixes: parseList(overlay.querySelector('#set-custom-prefixes').value),
